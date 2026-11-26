@@ -89,7 +89,14 @@ the shape ✅.
 | Playback, Half resolution, comp with masked video + glow text + 3D nested compound + null | 21 fps achieved (comp 30 fps), frames skipped rather than queued |
 | Export 30 s 1080p H.264 of that comp | 166 s (≈5.4 fps render+encode) in debug |
 | Export 2 s 720p ProRes 4444 star | 5.2 s |
-| GPU test suite (all 70 effects etc.) | 0.7 s |
+| GPU test suite (all 70 effects etc.) | 0.7 s debug / 1.3 s release (incl. device init) |
+| **Installed release build**: import 8 s 720p clip, GPU render, export 3 s 720p H.264+AAC | export 3.1 s (≈ real time); bundled FFmpeg used from the install folder |
+
+### Packaging (verified)
+`release/VEYRA_0.9.0_x64-setup.exe` (NSIS, per-user, 130 MB), `release/VEYRA_0.9.0_x64_en-US.msi`
+(184 MB), `release/VEYRA-Beta-portable.zip` (183 MB). The NSIS installer was installed silently
+on the build machine and the installed app was launched and exercised (above). The MSI and the
+portable ZIP were built but not separately installed/launched.
 
 Optimisations in place: decoder processes persist and stream sequentially (no re-seek during
 playback); render/encode overlap via a writer thread; texture pooling with submission-
