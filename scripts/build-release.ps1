@@ -18,10 +18,9 @@ if (-not $SkipTests) {
     if ($LASTEXITCODE -ne 0) { throw 'Rust tests failed' }
 }
 
-Push-Location ui
-npx tauri build --config ..\src-tauri\tauri.conf.json
+# Run the Tauri CLI from the repo root so it discovers src-tauri/tauri.conf.json.
+& (Join-Path $root 'ui\node_modules\.bin\tauri.cmd') build
 if ($LASTEXITCODE -ne 0) { throw 'tauri build failed' }
-Pop-Location
 
 # Portable build: the release exe plus its resources, runnable without installing.
 $out = Join-Path $root 'release'

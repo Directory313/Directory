@@ -81,6 +81,23 @@ export function App() {
     return () => { subs.forEach((p) => p.then((u) => u())); };
   }, []);
 
+  // Background pre-rendering: when idle for 2 s after an edit, render the work area into the cache.
+  const synced = useEditor((s) => s.syncedRevision);
+  const playing = useEditor((s) => s.playing);
+  const compId = useEditor((s) => s.compId);
+  const scale = useEditor((s) => s.previewScale);
+  useEffect(() => {
+    if (!isTauri || playing || !settings?.backgroundRender) return;
+    const id = window.setTimeout(() => {
+      const c = useEditor.getState().project?.compositions.find((x) => x.id === compId);
+      if (!c) return;
+      const [a, b] = c.workArea ?? [0, c.duration];
+      api.prerender(c.id, a, Math.min(b, a + 60), scale).catch(() => {});
+    }, 2000);
+    return () => { window.clearTimeout(id); };
+  }, [synced, playing, compId, scale, settings?.backgroundRender]);
+  useEffect(() => { if (playing) api.stopPrerender().catch(() => {}); }, [playing]);
+
   // Warn before closing with unsaved work.
   useEffect(() => {
     const h = (e: BeforeUnloadEvent) => { if (useEditor.getState().dirty) { e.preventDefault(); } };

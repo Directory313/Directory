@@ -88,6 +88,8 @@ pub fn set_settings(state: State<'_, AppState>, settings: Settings) -> R<()> {
     let disk = settings.disk_cache_mb * 1024 * 1024;
     let dir = if settings.cache_dir.is_empty() { state.dirs.cache.join("frames") } else { PathBuf::from(&settings.cache_dir).join("frames") };
     state.cache.configure(ram, (disk > 0).then_some(dir), disk);
+    veyra_media::decode::HW_DECODE.store(settings.hardware_decode, Ordering::Relaxed);
+    state.decoders.clear(); // restart decoders with the new decode mode
     *state.settings.write() = settings;
     state.save_settings();
     Ok(())

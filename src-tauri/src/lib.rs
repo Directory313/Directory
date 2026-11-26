@@ -30,6 +30,7 @@ pub fn run() {
             let crashed = lock.exists();
             let _ = std::fs::write(&lock, std::process::id().to_string());
             let settings: Settings = std::fs::read_to_string(data.join("settings.json")).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
+            veyra_media::decode::HW_DECODE.store(settings.hardware_decode, std::sync::atomic::Ordering::Relaxed);
             if settings.cpu_threads > 0 {
                 let _ = rayon::ThreadPoolBuilder::new().num_threads(settings.cpu_threads).build_global();
             }

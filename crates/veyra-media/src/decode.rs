@@ -10,6 +10,9 @@ use std::process::{Child, ChildStdout, Stdio};
 use std::sync::Arc;
 use std::time::Instant;
 
+/// Use FFmpeg hardware-accelerated decoding (`-hwaccel auto`) for video streams.
+pub static HW_DECODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
 /// Straight-alpha RGBA8 frame.
 #[derive(Clone)]
 pub struct Frame {
@@ -89,6 +92,9 @@ impl Decoder {
         }
         if let Some(codec) = &self.src.alpha_codec {
             c.args(["-c:v", codec]);
+        } else if self.src.sequence.is_none() && HW_DECODE.load(std::sync::atomic::Ordering::Relaxed) {
+            // Falls back to software automatically when no compatible device exists.
+            c.args(["-hwaccel", "auto"]);
         }
         c.arg("-i").arg(&self.src.path);
         let vf = format!("fps={},scale={}:{}:flags=bicubic", self.src.fps, self.w, self.h);

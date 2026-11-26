@@ -149,7 +149,7 @@ pub fn validate(s: &ExportSettings, comp_transparent: bool, available_encoders: 
     if s.audio && c.sequence {
         v.warnings.push("Image sequences cannot contain audio; a separate .wav will be written next to the frames".into());
     }
-    if s.hardware && c.hw.iter().all(|h| !available_encoders.iter().any(|e| e == h)) {
+    if s.hardware && !c.hw.is_empty() && c.hw.iter().all(|h| !available_encoders.iter().any(|e| e == h)) {
         v.warnings.push("No hardware encoder is available for this codec; software encoding will be used".into());
     }
     v.ok = v.errors.is_empty();

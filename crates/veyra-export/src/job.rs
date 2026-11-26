@@ -112,7 +112,8 @@ pub fn run(
     }
     let mut cmd = ffmpeg::ffmpeg().map_err(|e| e.to_string())?;
     cmd.args(["-y", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", &format!("{rw}x{rh}"), "-r", &format!("{}", s.fps), "-i", "-"]);
-    let want_audio = s.audio && !codec.sequence && s.codec != "gif";
+    // No audible clips → no audio stream (rather than muxing silence).
+    let want_audio = s.audio && !codec.sequence && s.codec != "gif" && !clips.is_empty();
     let (ainputs, agraph) = audio::build_mix(&clips, duration, s.sample_rate, s.channels, 1);
     if want_audio {
         cmd.args(&ainputs);
