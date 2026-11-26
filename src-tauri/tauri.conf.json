@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "VEYRA",
+  "version": "0.9.0",
+  "identifier": "studio.veyra.editor",
+  "build": {
+    "frontendDist": "../ui/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm --prefix ../ui run dev",
+    "beforeBuildCommand": "npm --prefix ../ui run build"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "VEYRA Beta",
+        "width": 1600,
+        "height": 960,
+        "minWidth": 1100,
+        "minHeight": 680,
+        "center": true,
+        "theme": "Dark",
+        "backgroundColor": "#101010",
+        "dragDropEnabled": true,
+        "maximized": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob: asset: http://asset.localhost; media-src 'self' blob: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src ipc: http://ipc.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$APPCACHE/**", "$APPDATA/**", "$APPLOCALDATA/**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "publisher": "VEYRA",
+    "category": "Video",
+    "shortDescription": "Video editing and motion graphics",
+    "longDescription": "VEYRA Beta: a GPU-accelerated desktop video editor, compositor and motion graphics application.",
+    "copyright": "VEYRA contributors. FFmpeg is licensed under the GPL; see resources/ffmpeg/LICENSE-FFmpeg.txt.",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "resources": {
+      "resources/ffmpeg/ffmpeg.exe": "ffmpeg/ffmpeg.exe",
+      "resources/ffmpeg/ffprobe.exe": "ffmpeg/ffprobe.exe",
+      "resources/ffmpeg/LICENSE-FFmpeg.txt": "ffmpeg/LICENSE-FFmpeg.txt",
+      "resources/ffmpeg/README-FFmpeg-build.txt": "ffmpeg/README-FFmpeg-build.txt",
+      "resources/blender/export_scene.py": "blender/export_scene.py"
+    },
+    "windows": {
+      "webviewInstallMode": { "type": "embedBootstrapper" },
+      "nsis": { "installMode": "currentUser", "displayLanguageSelector": false }
+    }
+  }
+}

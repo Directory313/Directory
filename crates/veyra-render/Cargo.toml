@@ -1,0 +1,23 @@
+[package]
+name = "veyra-render"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+veyra-core = { path = "../veyra-core" }
+veyra-media = { path = "../veyra-media" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+parking_lot.workspace = true
+log.workspace = true
+glam.workspace = true
+wgpu = { version = "26", default-features = false, features = ["dx12", "vulkan", "wgsl", "std"] }
+bytemuck = { version = "1", features = ["derive"] }
+pollster = "0.4"
+swash = "0.2"
+cosmic-text = { version = "0.14", default-features = false, features = ["std", "swash"] }
+resvg = { version = "0.45", default-features = false, features = ["text", "system-fonts", "memmap-fonts", "raster-images"] }
+lyon_tessellation = "1"
+gltf = { version = "1", default-features = false, features = ["import", "utils", "names"] }

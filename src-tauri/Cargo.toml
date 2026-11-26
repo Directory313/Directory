@@ -1,0 +1,30 @@
+[package]
+name = "veyra"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "VEYRA Beta — desktop video editor and motion graphics suite"
+default-run = "veyra"
+
+[lib]
+name = "veyra_app"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+veyra-core = { path = "../crates/veyra-core" }
+veyra-media = { path = "../crates/veyra-media" }
+veyra-render = { path = "../crates/veyra-render" }
+veyra-export = { path = "../crates/veyra-export" }
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2"
+serde.workspace = true
+serde_json.workspace = true
+parking_lot.workspace = true
+log.workspace = true
+rayon.workspace = true
+glam.workspace = true
+base64 = "0.22"
+env_logger = "0.11"

@@ -1,0 +1,15 @@
+[package]
+name = "veyra-export"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+veyra-core = { path = "../veyra-core" }
+veyra-media = { path = "../veyra-media" }
+veyra-render = { path = "../veyra-render" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+parking_lot.workspace = true
+log.workspace = true

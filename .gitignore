@@ -1,0 +1,11 @@
+/target/
+node_modules/
+/ui/dist/
+/src-tauri/gen/
+# FFmpeg binaries are large; fetched/copied by scripts/setup-ffmpeg.ps1
+/src-tauri/resources/ffmpeg/*.exe
+*.veyra.tmp
+.DS_Store
+/release/
+/ui/test-results/
+/ui/playwright-report/
