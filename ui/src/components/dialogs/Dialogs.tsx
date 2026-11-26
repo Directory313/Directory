@@ -273,7 +273,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             {row('Accent intensity', <Slider value={s.accentIntensity} min={0.4} max={1} step={0.05} onChange={(v) => set({ accentIntensity: v })} width={180} />)}
             {row('Reduce motion', <Toggle on={s.reducedMotion} onChange={(v) => set({ reducedMotion: v })} />)}
             {row('Workspace', <Select value={s.activeWorkspace} onChange={(v) => set({ activeWorkspace: v })} options={WORKSPACE_NAMES.map((n) => ({ value: n, label: n }))} />)}
-            {row('Panel layouts', <button className="btn sm" onClick={() => { for (const n of WORKSPACE_NAMES) try { localStorage.removeItem(`veyra.layout.${n}`); } catch { /* ignore */ } useEditor.getState().toast('success', 'Layouts reset — switch workspace to apply'); }}>Reset all layouts</button>)}
+            {row('Panel layouts', <button className="btn sm" onClick={() => { for (const n of WORKSPACE_NAMES) try { localStorage.removeItem(`veyra.layout.v2.${n}`); } catch { /* ignore */ } useEditor.getState().toast('success', 'Layouts reset — switch workspace to apply'); }}>Reset all layouts</button>)}
           </>}
           {tab === 'Shortcuts' && <><input className="input" style={{ width: '100%', marginBottom: 8 }} placeholder="Filter…" value={sf} onChange={(e) => setSf(e.target.value)} onKeyDown={(e) => e.stopPropagation()} /><ShortcutEditor filter={sf} /></>}
         </div>

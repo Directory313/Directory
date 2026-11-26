@@ -12,7 +12,7 @@ use std::sync::{Arc, OnceLock};
 use tauri::Manager;
 
 pub fn run() {
-    let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).try_init();
+    let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info,wgpu_hal=warn,wgpu_core=warn,naga=warn")).try_init();
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {

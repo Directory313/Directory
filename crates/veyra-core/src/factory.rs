@@ -54,9 +54,9 @@ pub fn media_layer(comp: &Composition, asset: &Asset, start: f64) -> Layer {
         LayerKind::Media { asset: asset.id.clone() }
     };
     let mut l = base_layer(&asset.name, kind, comp, start, dur, w, h);
-    // Fit oversized media to the composition.
+    // Scale media to fit inside the composition (up or down), like most editors do by default.
     let fit = (comp.width as f64 / w).min(comp.height as f64 / h);
-    if fit < 1.0 && !matches!(l.kind, LayerKind::Audio { .. }) {
+    if (fit - 1.0).abs() > 1e-6 && !matches!(l.kind, LayerKind::Audio { .. }) {
         let s = fit * 100.0;
         l.transform.scale.value = [s, s, 100.0];
     }

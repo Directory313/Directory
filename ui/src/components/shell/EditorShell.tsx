@@ -17,7 +17,7 @@ import { RenderQueuePanel } from '../panels/RenderQueue';
 import { HierarchyPanel } from '../panels/Hierarchy';
 import { Dialogs } from '../dialogs/Dialogs';
 
-const LAYOUT_KEY = 'veyra.layout.';
+const LAYOUT_KEY = 'veyra.layout.v2.';
 
 function loadModel(name: string): Model {
   try {

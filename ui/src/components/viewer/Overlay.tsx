@@ -498,6 +498,8 @@ export function Overlay({ comp, view, onPan, guides, setGuides, trackPts, setTra
       {textEdit && textPos && (
         <textarea
           className="ov-text" autoFocus value={textEdit.value}
+          // Select the existing text so typing replaces the placeholder (and edits replace on retype).
+          onFocus={(e) => e.currentTarget.select()}
           style={{ left: view.left + textPos[0] * z, top: view.top + textPos[1] * z + 6 }}
           onPointerDown={(e) => e.stopPropagation()}
           onChange={(e) => setTextEdit({ ...textEdit, value: e.target.value })}

@@ -22,11 +22,13 @@ const GLOBAL: IJsonModel['global'] = {
   splitterSize: 4,
 };
 
+/** `layout` lists its children top-to-bottom. flexlayout's root row is horizontal, so the
+ *  vertical stack is nested one level down (rows alternate orientation at each depth). */
 function model(layout: IJsonRowNode): IJsonModel {
-  return { global: GLOBAL, borders: [], layout };
+  return { global: GLOBAL, borders: [], layout: { type: 'row', weight: 100, children: [{ ...layout, weight: 100 }] } };
 }
 
-// A row's children alternate orientation: row (horizontal) -> row (vertical) -> ...
+// Presets read top-to-bottom; a nested row inside lays its children out left-to-right.
 export const WORKSPACES: Record<string, () => IJsonModel> = {
   Editing: () => model(row(100, [
     row(62, [set(22, ['media', 'library']), set(53, ['viewer']), set(25, ['inspector', 'hierarchy'])]),

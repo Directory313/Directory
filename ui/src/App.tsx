@@ -6,7 +6,15 @@ import { HomeScreen } from './components/shell/HomeScreen';
 import { EditorShell } from './components/shell/EditorShell';
 import { Toasts } from './components/shell/Toasts';
 import { ContextMenuHost } from './components/ui/primitives';
-import { useOsDragDrop } from './components/shell/dragdrop';
+import { useOsDragDrop, importPaths } from './components/shell/dragdrop';
+import * as ops from './lib/ops';
+import { runAction } from './lib/actions';
+
+// Development-only automation hook used by the end-to-end tests (e2e/*.mjs). It exposes the
+// same functions the UI calls (e.g. the OS file-drop handler), not a separate code path.
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__veyra = { useEditor, importPaths, ops, runAction, api };
+}
 import './components/shell/coreActions';
 import './lib/playback'; // registers transport shortcuts and the playback clock
 

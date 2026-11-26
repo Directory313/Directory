@@ -100,7 +100,7 @@ export function HomeScreen() {
             ))}
             <div className="preset custom">
               <span className="label">Custom</span>
-              <div className="row"><input className="input" type="number" value={w} style={{ width: 64 }} onChange={(e) => setW(Math.max(16, Number(e.target.value)))} />×<input className="input" type="number" value={h} style={{ width: 64 }} onChange={(e) => setH(Math.max(16, Number(e.target.value)))} /></div>
+              <div className="row" style={{ gap: 3 }}><input className="input mono" type="number" value={w} style={{ width: 50, padding: '0 3px' }} onChange={(e) => setW(Math.max(16, Number(e.target.value)))} />×<input className="input mono" type="number" value={h} style={{ width: 50, padding: '0 3px' }} onChange={(e) => setH(Math.max(16, Number(e.target.value)))} /></div>
             </div>
           </div>
           <div className="row" style={{ marginTop: 14, gap: 16, flexWrap: 'wrap' }}>
