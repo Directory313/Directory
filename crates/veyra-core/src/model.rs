@@ -460,7 +460,7 @@ impl Layer {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase", tag = "type")]
+#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "type")]
 pub enum LayerKind {
     Media { asset: Id },
     Audio { asset: Id },
@@ -595,7 +595,7 @@ pub struct TextAnimator {
 // ---------------------------------------------------------------- Shapes
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase", tag = "type")]
+#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "type")]
 pub enum Geometry {
     Rect { size: Prop<Vec2>, roundness: Prop<f64> },
     Ellipse { size: Prop<Vec2> },
@@ -856,7 +856,7 @@ impl Default for Material {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase", tag = "type")]
+#[serde(rename_all = "camelCase", rename_all_fields = "camelCase", tag = "type")]
 pub enum MeshPrimitive {
     Cube { size: f64 },
     Sphere { radius: f64, segments: u32, rings: u32 },

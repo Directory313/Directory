@@ -5,9 +5,7 @@
   "identifier": "studio.veyra.editor",
   "build": {
     "frontendDist": "../ui/dist",
-    "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "npm --prefix ../ui run dev",
-    "beforeBuildCommand": "npm --prefix ../ui run build"
+    "devUrl": "http://localhost:5173"
   },
   "app": {
     "withGlobalTauri": false,
@@ -30,7 +28,7 @@
       "csp": "default-src 'self'; img-src 'self' data: blob: asset: http://asset.localhost; media-src 'self' blob: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src ipc: http://ipc.localhost",
       "assetProtocol": {
         "enable": true,
-        "scope": ["$APPCACHE/**", "$APPDATA/**", "$APPLOCALDATA/**"]
+        "scope": ["**"]
       }
     }
   },

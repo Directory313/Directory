@@ -5,6 +5,7 @@ members = [
     "crates/veyra-media",
     "crates/veyra-render",
     "crates/veyra-export",
+    "src-tauri",
 ]
 
 [workspace.package]

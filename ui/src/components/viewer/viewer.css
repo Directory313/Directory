@@ -1,0 +1,70 @@
+.viewer { background: var(--bg-1); }
+.vw-head { gap: 4px; }
+.vw-crumbs { gap: 4px; min-width: 0; overflow: hidden; }
+.vw-crumb { border: none; background: none; color: var(--text-2); cursor: pointer; padding: 2px 4px; border-radius: var(--r-xs); font-size: var(--fs-sm); }
+.vw-crumb:hover { color: var(--text-1); background: var(--bg-3); }
+.vw-crumb.on { color: var(--text-1); font-weight: 600; }
+.vw-dim { font-size: var(--fs-xs); margin-left: 6px; white-space: nowrap; }
+.vw-head select.input { height: 22px; font-size: var(--fs-sm); }
+.vw-head .pill { border: none; cursor: default; }
+.vw-head button.pill { cursor: pointer; }
+
+.vw-main { flex: 1; min-height: 0; display: flex; }
+.vw-tools { width: 34px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; border-right: 1px solid var(--border-soft); background: var(--bg-2); overflow-y: auto; }
+.vw-tool-sep { width: 16px; height: 1px; background: var(--border); margin: 4px 0; }
+.vw-stage { flex: 1; min-width: 0; position: relative; overflow: hidden; background: #0c0c0c; }
+.vw-frame { position: absolute; box-shadow: 0 0 0 1px #2a2a2a, 0 12px 40px rgba(0, 0, 0, 0.55); }
+.vw-canvas { width: 100%; height: 100%; display: block; }
+.vw-note, .vw-error { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); padding: 5px 10px; border-radius: var(--r-sm); background: var(--bg-3); color: var(--text-2); font-size: var(--fs-sm); display: flex; gap: 6px; align-items: center; pointer-events: none; max-width: 80%; }
+.vw-error { color: var(--error); border: 1px solid rgba(228, 100, 108, 0.3); }
+
+.vw-transport { height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 2px; padding: 0 8px; border-top: 1px solid var(--border-soft); background: var(--bg-2); }
+.vw-play { width: 32px; height: 28px; color: var(--text-1); }
+.vw-play:hover { color: var(--accent); }
+.vw-tc { color: var(--accent-hi); font-size: var(--fs-md); margin: 0 6px 0 10px; }
+.vw-fps { font-size: var(--fs-xs); color: var(--ok); margin-right: 8px; }
+.vw-fps.slow { color: var(--warn); }
+.vw-cache, .vw-busy { width: 7px; height: 7px; border-radius: 50%; background: var(--bg-4); margin: 0 3px; }
+.vw-cache.on { background: var(--ok); }
+.vw-busy.on { background: var(--accent); animation: vwpulse 0.8s ease-in-out infinite alternate; }
+@keyframes vwpulse { from { opacity: 0.35; } to { opacity: 1; } }
+
+/* overlay */
+.ov-root { position: absolute; inset: 0; touch-action: none; }
+.ov-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ov-svg * { vector-effect: non-scaling-stroke; }
+.ov-box { fill: none; stroke: var(--accent); stroke-width: 1; pointer-events: none; }
+.ov-box.ov-3d { stroke-dasharray: 4 3; }
+.ov-handle { fill: var(--bg-0); stroke: var(--accent); stroke-width: 1.25; cursor: nwse-resize; }
+.ov-rot { fill: transparent; stroke: none; cursor: grab; }
+.ov-anchor { cursor: move; }
+.ov-anchor circle { fill: none; stroke: var(--accent-hi); stroke-width: 1.25; }
+.ov-anchor line { stroke: var(--accent-hi); stroke-width: 1; }
+.ov-mask { fill: rgba(242, 141, 150, 0.04); stroke: #e7b46a; stroke-width: 1; cursor: pointer; }
+.ov-mask.on { stroke: var(--accent-hi); stroke-width: 1.5; }
+.ov-vtx { fill: var(--bg-0); stroke: var(--accent-hi); stroke-width: 1.25; cursor: move; }
+.ov-vtx.on { fill: var(--accent); }
+.ov-tan { stroke: var(--accent-2); stroke-width: 1; opacity: 0.8; }
+.ov-tanh { fill: var(--accent-2); stroke: none; cursor: crosshair; }
+.ov-rubber { fill: var(--accent-a12); stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 3; pointer-events: none; }
+.ov-pen path { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+.ov-pen rect { fill: var(--bg-0); stroke: var(--accent); stroke-width: 1.25; }
+.ov-pen rect.first { fill: var(--accent); }
+.ov-grid line { stroke: rgba(255, 255, 255, 0.08); stroke-width: 1; pointer-events: none; }
+.ov-safe rect, .ov-safe line { fill: none; stroke: rgba(255, 255, 255, 0.35); stroke-width: 1; pointer-events: none; }
+.ov-guide { stroke: #5cc8e8; stroke-width: 1; cursor: move; }
+.ov-track rect { fill: none; stroke: #e7b46a; stroke-width: 1.25; }
+.ov-track rect.search { stroke-dasharray: 3 3; opacity: 0.6; }
+.ov-track line { stroke: #e7b46a; stroke-width: 1; }
+.ov-text { position: absolute; min-width: 180px; min-height: 52px; background: rgba(16, 16, 16, 0.92); border: 1px solid var(--accent); border-radius: var(--r-sm); color: var(--text-1); padding: 6px 8px; font: 500 var(--fs-lg) var(--font); outline: none; resize: both; z-index: 5; }
+
+.vw-ruler { position: absolute; background: var(--bg-2); color: var(--text-3); font: 9px var(--mono); overflow: hidden; z-index: 4; }
+.vw-ruler.top { left: 0; right: 0; top: 0; border-bottom: 1px solid var(--border); cursor: s-resize; }
+.vw-ruler.left { top: 0; bottom: 0; left: 0; border-right: 1px solid var(--border); cursor: e-resize; }
+.vw-ruler span { position: absolute; padding-left: 2px; border-left: 1px solid var(--border); line-height: 18px; }
+.vw-ruler.left span { padding-left: 0; padding-top: 1px; border-left: none; border-top: 1px solid var(--border); width: 18px; text-align: center; line-height: 1; writing-mode: vertical-rl; }
+.vw-ruler-corner { position: absolute; left: 0; top: 0; background: var(--bg-2); z-index: 5; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+.vw-float { position: absolute; right: 12px; top: 12px; width: 236px; background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-2); padding: 10px; z-index: 6; font-size: var(--fs-sm); }
+.vw-progress { height: 3px; background: var(--bg-4); border-radius: 3px; overflow: hidden; }
+.vw-progress i { display: block; height: 100%; background: var(--accent); transition: width 0.2s; }
