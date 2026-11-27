@@ -46,6 +46,17 @@ powershell -ExecutionPolicy Bypass -File scripts\build-release.ps1  # installers
 
 Outputs land in `release/` (NSIS installer, MSI, portable ZIP).
 
+### Building on GitHub (no local build files)
+
+`.github/workflows/build.yml` builds the installer on GitHub Actions:
+
+- **New version:** bump `version` in `src-tauri/tauri.conf.json`, commit, then push a matching tag
+  (`git tag v0.9.2; git push origin v0.9.2`). The installer is published as a GitHub Release.
+- **Test build:** Actions tab → "Build installer" → "Run workflow". The installer is attached to
+  the run under "Artifacts" for 7 days; nothing is published.
+
+After a version is published, the local `target/` folder (several GB) can be deleted safely.
+
 ## Repository layout
 
 | Path | Contents |
