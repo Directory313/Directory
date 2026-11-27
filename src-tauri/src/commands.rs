@@ -125,6 +125,17 @@ pub fn expression_errors() -> Vec<(String, String)> {
     veyra_core::eval::EXPR_ERRORS.lock().map(|mut e| std::mem::take(&mut *e)).unwrap_or_default()
 }
 
+/// Called right before the updater installs a new version. The installer closes the app without
+/// the normal window-close path, so release what that path would: the session lock (otherwise the
+/// next launch reports a crash) and open decoders (file handles).
+#[tauri::command]
+pub fn prepare_for_update(app: AppHandle) -> R<()> {
+    let s = st(&app);
+    let _ = std::fs::remove_file(s.dirs.data.join("session.lock"));
+    s.decoders.clear();
+    Ok(())
+}
+
 #[tauri::command]
 pub fn reveal_path(path: String) -> R<()> {
     let p = PathBuf::from(&path);

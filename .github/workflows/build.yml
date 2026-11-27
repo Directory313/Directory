@@ -4,7 +4,10 @@
 #  - "Run workflow" on the Actions tab -> test build; the installer is attached to the run
 #    (Actions -> the run -> "Artifacts") and kept for 7 days. Nothing is published.
 #
-# Before tagging a new version, bump "version" in src-tauri/tauri.conf.json to match the tag.
+# Releasing: run scripts/bump-version.ps1 <version>, write what changed in RELEASE_NOTES.md (shown
+# in the app's update pop-up and on the release page), commit, then push the tag v<version>.
+# Every build is signed with the update key from the repository secrets
+# TAURI_SIGNING_PRIVATE_KEY and TAURI_SIGNING_PRIVATE_KEY_PASSWORD.
 name: Build installer
 
 on:
@@ -76,23 +79,53 @@ jobs:
           npm test
           npm run build
 
+      # Signs the installer with the update key (repository secrets) so installed copies of
+      # Directory accept it as an update. tauri.updater.conf.json turns on the .sig output.
       - name: Build installer
-        run: ui/node_modules/.bin/tauri build --bundles nsis
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if (-not $env:TAURI_SIGNING_PRIVATE_KEY) { throw 'Repository secret TAURI_SIGNING_PRIVATE_KEY is missing (Settings -> Secrets and variables -> Actions).' }
+          ui/node_modules/.bin/tauri build --bundles nsis --config src-tauri/tauri.updater.conf.json
+          if ($LASTEXITCODE -ne 0) { throw 'tauri build failed' }
 
-      - name: Find installer
+      # latest.json is what installed copies download to learn about a new version. The app reads
+      # it from .../releases/latest/download/latest.json, i.e. from the newest published release.
+      - name: Prepare update files
         id: out
         run: |
           $exe = Get-ChildItem target/release/bundle/nsis -Filter *-setup.exe | Select-Object -First 1
-          "path=$($exe.FullName)" >> $env:GITHUB_OUTPUT
+          $sig = "$($exe.FullName).sig"
+          if (-not (Test-Path $sig)) { throw "Update signature $sig was not created" }
+          $ver = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $tag = "v$ver"
+          $notes = if (Test-Path RELEASE_NOTES.md) { (Get-Content RELEASE_NOTES.md -Raw).Trim() } else { '' }
+          $dir = Join-Path $env:RUNNER_TEMP 'out'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item $exe.FullName, $sig $dir
+          [ordered]@{
+            version   = $ver
+            notes     = $notes
+            pub_date  = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+            platforms = [ordered]@{
+              'windows-x86_64' = [ordered]@{
+                signature = (Get-Content $sig -Raw).Trim()
+                url       = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$tag/$($exe.Name)"
+              }
+            }
+          } | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $dir 'latest.json') -Encoding utf8NoBOM
+          "dir=$dir" >> $env:GITHUB_OUTPUT
           "name=$($exe.Name)" >> $env:GITHUB_OUTPUT
-          Write-Host "$($exe.Name): $([math]::Round($exe.Length / 1MB, 1)) MB"
+          Write-Host "$($exe.Name): $([math]::Round($exe.Length / 1MB, 1)) MB, signed"
+          Get-Content (Join-Path $dir 'latest.json')
 
       - name: Keep test build (manual runs)
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.out.outputs.name }}
-          path: ${{ steps.out.outputs.path }}
+          path: ${{ steps.out.outputs.dir }}
           retention-days: 7
           compression-level: 0
 
@@ -102,10 +135,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = $env:GITHUB_REF_NAME
+          $dir = '${{ steps.out.outputs.dir }}'
+          $files = @("$dir/${{ steps.out.outputs.name }}", "$dir/${{ steps.out.outputs.name }}.sig", "$dir/latest.json")
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag "${{ steps.out.outputs.path }}" --clobber
+            gh release upload $tag @files --clobber
           } else {
-            $notes = "Directory $($tag.TrimStart('v')) Beta for Windows (64-bit).`n`nDownload **${{ steps.out.outputs.name }}** below and run it to install."
-            gh release create $tag "${{ steps.out.outputs.path }}" --title "Directory $($tag.TrimStart('v')) Beta" --notes $notes
+            $intro = "Directory $($tag.TrimStart('v')) Beta for Windows (64-bit).`n`nAlready have Directory 0.9.2 or later? It offers this update by itself. Otherwise download **${{ steps.out.outputs.name }}** below and run it to install."
+            $notes = if (Test-Path RELEASE_NOTES.md) { "$intro`n`n## What's new`n`n$((Get-Content RELEASE_NOTES.md -Raw).Trim())" } else { $intro }
+            gh release create $tag @files --title "Directory $($tag.TrimStart('v')) Beta" --notes $notes --latest
           }
+          if ($LASTEXITCODE -ne 0) { throw 'publishing the release failed' }

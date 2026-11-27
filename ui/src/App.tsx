@@ -5,6 +5,8 @@ import { handleShortcut } from './lib/actions';
 import { HomeScreen } from './components/shell/HomeScreen';
 import { EditorShell } from './components/shell/EditorShell';
 import { Toasts } from './components/shell/Toasts';
+import { UpdateDialog } from './components/dialogs/UpdateDialog';
+import { checkForUpdates, useUpdater } from './lib/updater';
 import { ContextMenuHost } from './components/ui/primitives';
 import { useOsDragDrop, importPaths } from './components/shell/dragdrop';
 import * as ops from './lib/ops';
@@ -13,7 +15,7 @@ import { runAction } from './lib/actions';
 // Development-only automation hook used by the end-to-end tests (e2e/*.mjs). It exposes the
 // same functions the UI calls (e.g. the OS file-drop handler), not a separate code path.
 if (import.meta.env.DEV) {
-  (window as unknown as Record<string, unknown>).__veyra = { useEditor, importPaths, ops, runAction, api };
+  (window as unknown as Record<string, unknown>).__veyra = { useEditor, importPaths, ops, runAction, api, useUpdater };
 }
 import './components/shell/coreActions';
 import './lib/playback'; // registers transport shortcuts and the playback clock
@@ -33,6 +35,9 @@ export function App() {
         const recovery = await api.listRecovery();
         if (!recovery.length) openProjectPath(s.recent[0]); // recovery prompt on the home screen takes precedence
       }
+      // Look for a new version once settings (and the skipped version) are known. Development
+      // builds skip this: their version is not a release.
+      if (!import.meta.env.DEV) window.setTimeout(() => { void checkForUpdates(false); }, 3000);
     }).catch(() => {});
     api.effects().then((d) => useEditor.setState({ effectDefs: d })).catch(() => {});
     api.appInfo().then((info) => {
@@ -120,6 +125,7 @@ export function App() {
     <>
       {screen === 'home' ? <HomeScreen /> : <EditorShell />}
       <Toasts />
+      <UpdateDialog />
       <ContextMenuHost />
     </>
   );

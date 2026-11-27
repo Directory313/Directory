@@ -21,6 +21,8 @@ export interface Settings {
   motionBlurSamples: number; exportFolder: string; exportPreset: string; blenderPath: string;
   shortcuts: Record<string, string>; workspaces: Record<string, unknown>; activeWorkspace: string; recent: string[];
   lutFolders: string[]; favoriteEffects: string[]; thumbnails: boolean; waveforms: boolean;
+  /** Update version the user chose to skip; empty when none. */
+  skippedUpdate: string;
 }
 
 export interface ExportSettings {
@@ -46,6 +48,7 @@ export const api = {
   appInfo: () => call<AppInfo>('app_info'),
   getSettings: () => call<Settings>('get_settings'),
   setSettings: (settings: Settings) => call<void>('set_settings', { settings }),
+  prepareForUpdate: () => call<void>('prepare_for_update'),
   effects: () => call<EffectDef[]>('registry_effects'),
   exportCatalog: () => call<{ codecs: CodecInfo[]; presets: Preset[] }>('export_catalog'),
   fonts: () => call<string[]>('list_fonts'),

@@ -56,6 +56,8 @@ pub struct Settings {
     pub favorite_effects: Vec<String>,
     pub thumbnails: bool,
     pub waveforms: bool,
+    /// Update version the user chose to skip ("Skip this version"); empty when none.
+    pub skipped_update: String,
 }
 
 impl Default for Settings {
@@ -102,6 +104,7 @@ impl Default for Settings {
             favorite_effects: vec![],
             thumbnails: true,
             waveforms: true,
+            skipped_update: String::new(),
         }
     }
 }

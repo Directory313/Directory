@@ -15,6 +15,7 @@ pub fn run() {
     let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info,wgpu_hal=warn,wgpu_core=warn,naga=warn")).try_init();
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let data = app.path().app_data_dir()?;
             migrate_from_veyra(&data);
@@ -86,6 +87,7 @@ pub fn run() {
             commands::validate_expression,
             commands::expression_errors,
             commands::reveal_path,
+            commands::prepare_for_update,
             commands::new_project,
             commands::new_composition,
             commands::sync_project,

@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 import { addLayer, copyLayers, deleteLayers, duplicateLayers, pasteLayers, precompose, selectAllLayers, splitAtPlayhead, moveLayers } from '../../lib/ops';
 import { activeComp, draftComp, useEditor } from '../../store/editor';
 import { importPaths } from './dragdrop';
+import { checkForUpdates } from '../../lib/updater';
 import type { Draft } from 'immer';
 import type { Composition, Layer } from '../../types/project';
 
@@ -160,6 +161,7 @@ registerActions([
   { id: 'app.settings', label: 'Settings', group: 'App', shortcut: 'Ctrl+,', run: () => S().set({ dialog: 'settings' }) },
   { id: 'app.palette', label: 'Command Palette', group: 'App', shortcut: 'Ctrl+Shift+P', run: () => S().set({ dialog: 'palette' }) },
   { id: 'app.shortcuts', label: 'Keyboard Shortcuts', group: 'App', shortcut: 'F1', run: () => S().set({ dialog: 'shortcuts' }) },
+  { id: 'app.checkUpdates', label: 'Check for Updates…', group: 'App', run: () => checkForUpdates(true) },
   { id: 'app.clearCache', label: 'Clear Render Cache', group: 'App', run: async () => { await api.clearCache(); S().set({ cached: {} }); S().toast('success', 'Cache cleared'); } },
 
   { id: 'edit.undo', label: 'Undo', group: 'Edit', shortcut: 'Ctrl+Z', run: () => S().undo(), enabled: () => S().past.length > 0 },

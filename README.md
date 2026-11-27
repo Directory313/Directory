@@ -50,8 +50,13 @@ Outputs land in `release/` (NSIS installer, MSI, portable ZIP).
 
 `.github/workflows/build.yml` builds the installer on GitHub Actions:
 
-- **New version:** bump `version` in `src-tauri/tauri.conf.json`, commit, then push a matching tag
-  (`git tag v0.9.2; git push origin v0.9.2`). The installer is published as a GitHub Release.
+- **New version:** run `scripts\bump-version.ps1 <version>`, describe the changes in
+  `RELEASE_NOTES.md`, commit, then push a matching tag (`git tag v0.9.3; git push origin main v0.9.3`).
+  The signed installer is published as a GitHub Release together with `latest.json`, which
+  installed copies (0.9.2 and later) read to offer the update in-app.
+- **Update key:** builds are signed with the key in the repository secrets
+  `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`; the matching public key is in
+  `plugins.updater` of `src-tauri/tauri.conf.json`. Without that key no update can be published.
 - **Test build:** Actions tab → "Build installer" → "Run workflow". The installer is attached to
   the run under "Artifacts" for 7 days; nothing is published.
 

@@ -1,0 +1,2 @@
+- Directory now updates itself: when a new version is out, a pop-up offers to install it (Update now, Not now or Skip this version). Your projects and settings are kept.
+- Edit → Check for Updates… looks for a new version at any time.
