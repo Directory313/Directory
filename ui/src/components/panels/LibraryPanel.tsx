@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Circle, Hexagon, Lightbulb, Minus, MoveRight, Shapes, Sparkles, Square, Star, Triangle, Type, Video, Wand2, Waves } from 'lucide-react';
 import { useEditor, draftComp } from '../../store/editor';
+import { NONE } from '../../store/editor';
 import { api } from '../../lib/api';
 import { addLayer } from '../../lib/ops';
 import { SearchBox } from '../ui/primitives';
 import { ANIM_PRESETS, applyAnimPreset, applyCaptured, captureAnimation } from './animPresets';
 import { TRANSITIONS, type Effect, type TransitionKind } from '../../types/project';
+import { EASINGS, sampleEasing, type Easing } from '../../lib/anim';
+import { applyEasingToSelection } from '../timeline/keyops';
 import { activeComp } from '../../store/editor';
 
 type Tab = 'effects' | 'transitions' | 'animation' | 'shapes' | 'text' | '3d' | 'generate' | 'templates' | 'audio';
@@ -70,7 +73,7 @@ export function LibraryPanel() {
   const [tab, setTab] = useState<Tab>('effects');
   const [q, setQ] = useState('');
   const defs = useEditor((s) => s.effectDefs);
-  const favs = useEditor((s) => s.settings?.favoriteEffects ?? []);
+  const favs = useEditor((s) => s.settings?.favoriteEffects ?? NONE);
   const [saved, setSaved] = useState<{ kind: string; name: string; data: unknown }[]>([]);
   useEffect(() => {
     if (tab === 'animation') api.listPresets('animation').then(setSaved).catch(() => {});
@@ -142,6 +145,18 @@ export function LibraryPanel() {
         )}
         {tab === 'animation' && (
           <>
+            <div className="lib-group"><div className="lib-head">Easing — changes the curve between existing keyframes</div>
+              <div className="muted" style={{ padding: '2px 10px 6px', fontSize: 11 }}>Select keyframes (or a layer with keyframes) and click a curve. No keyframes are added; fine-tune it in the Graph Editor.</div>
+              {[...new Set(EASINGS.map((e) => e.group))].map((g) => (
+                <div key={g} className="ease-grid">
+                  {EASINGS.filter((e) => e.group === g).map((e) => (
+                    <button key={e.id} className="ease-tile" title={`${e.name}: apply to the selected keyframes`} onClick={() => applyEasingToSelection(e)}>
+                      <EaseCurve e={e} /><span>{e.name}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
             {['Basic', 'Physics', 'Procedural', 'Reveal', 'Text'].map((g) => (
               <div key={g} className="lib-group"><div className="lib-head">{g}</div>
                 {ANIM_PRESETS.filter((p) => p.group === g).map((p) => item(p.id, p.name, () => applyAnimPreset(p), <Wand2 size={13} />, `Applies at the playhead to the selected ${p.textOnly ? 'text ' : ''}layers`))}
@@ -224,5 +239,19 @@ export function LibraryPanel() {
         )}
       </div>
     </div>
+  );
+}
+
+/** Tiny curve preview for an easing (progress over time, with room for overshoot). */
+function EaseCurve({ e }: { e: Easing }) {
+  const pts = useMemo(() => sampleEasing(e, 40), [e]);
+  const W = 44, H = 30, pad = 7;
+  const y = (v: number) => H - pad - v * (H - pad * 2);
+  const d = pts.map((v, i) => `${i ? 'L' : 'M'}${(i / 40) * W},${y(v).toFixed(2)}`).join(' ');
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="ease-curve" aria-hidden>
+      <line x1="0" x2={W} y1={y(0)} y2={y(0)} className="ease-axis" /><line x1="0" x2={W} y1={y(1)} y2={y(1)} className="ease-axis" />
+      <path d={d} fill="none" />
+    </svg>
   );
 }

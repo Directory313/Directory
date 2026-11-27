@@ -25,6 +25,8 @@ export interface EditorState {
   past: { project: Project; label: string }[];
   future: { project: Project; label: string }[];
   lastEdit: { key: string; at: number } | null;
+  /** performance.now() of the most recent edit (drives the fast interactive preview). */
+  lastEditTime: number;
   revision: number;
   syncedRevision: number;
 
@@ -73,7 +75,9 @@ export interface EditorState {
 }
 
 let syncTimer: number | undefined;
-let syncPromise: Promise<void> = Promise.resolve();
+let syncWaiters: (() => void)[] = [];
+let syncing = false;
+let syncAgain = false;
 let toastId = 1;
 
 export const useEditor = create<EditorState>((set, get) => ({
@@ -86,6 +90,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   past: [],
   future: [],
   lastEdit: null,
+  lastEditTime: 0,
   revision: 0,
   syncedRevision: 0,
   compId: '',
@@ -142,6 +147,7 @@ export const useEditor = create<EditorState>((set, get) => ({
       dirty: true,
       saveState: 'unsaved',
       lastEdit: coalesce ? { key: coalesce, at: now } : null,
+      lastEditTime: now,
       revision: s.revision + 1,
     });
     scheduleSync();
@@ -172,10 +178,9 @@ export const useEditor = create<EditorState>((set, get) => ({
     scheduleSync();
   },
 
-  ensureSynced: async () => {
-    if (get().syncedRevision >= get().revision) return;
-    scheduleSync(0);
-    await syncPromise;
+  ensureSynced: () => {
+    if (get().syncedRevision >= get().revision) return Promise.resolve();
+    return new Promise<void>((resolve) => { syncWaiters.push(resolve); scheduleSync(0); });
   },
 
   toast: (kind, text, detail) => {
@@ -199,26 +204,45 @@ export const useEditor = create<EditorState>((set, get) => ({
   },
 }));
 
+/**
+ * Push the project to the render engine. Syncs are strictly serialised: two overlapping
+ * syncs could otherwise finish out of order and leave the engine holding an OLDER project
+ * than the editor (the preview would then lag one edit behind the inspector/overlay).
+ */
 function scheduleSync(delay = 30) {
   if (!isTauri) {
     useEditor.setState({ syncedRevision: useEditor.getState().revision });
+    syncWaiters.splice(0).forEach((r) => r());
     return;
   }
   window.clearTimeout(syncTimer);
-  syncPromise = new Promise((resolve) => {
-    syncTimer = window.setTimeout(async () => {
-      const { project, revision } = useEditor.getState();
-      if (project) {
+  syncTimer = window.setTimeout(() => { void runSync(); }, delay);
+}
+
+async function runSync() {
+  if (syncing) { syncAgain = true; return; }
+  syncing = true;
+  try {
+    do {
+      syncAgain = false;
+      const { project, revision, syncedRevision } = useEditor.getState();
+      const waiters = syncWaiters.splice(0);
+      if (project && revision > syncedRevision) {
         try {
           await api.syncProject(project);
-          useEditor.setState({ syncedRevision: revision });
+          if (useEditor.getState().syncedRevision < revision) useEditor.setState({ syncedRevision: revision });
         } catch (e) {
           useEditor.getState().toast('error', 'Engine rejected the edit', String(e));
+          // Do not leave the preview waiting forever on a rejected edit.
+          useEditor.setState({ syncedRevision: revision });
         }
       }
-      resolve();
-    }, delay);
-  });
+      waiters.forEach((r) => r());
+      if (useEditor.getState().revision > useEditor.getState().syncedRevision && syncWaiters.length) syncAgain = true;
+    } while (syncAgain);
+  } finally {
+    syncing = false;
+  }
 }
 
 // ---------------------------------------------------------------- selectors & helpers
@@ -276,3 +300,6 @@ export function cloneLayer(l: Layer): Layer {
   c.masks.forEach((m) => (m.id = newLocalId()));
   return c;
 }
+
+/** Stable empty array for store selectors (a fresh `[]` per call re-renders forever). */
+export const NONE: never[] = Object.freeze([]) as unknown as never[];

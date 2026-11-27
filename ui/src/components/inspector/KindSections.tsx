@@ -1,5 +1,5 @@
 // Layer-type specific inspector sections.
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Draft } from 'immer';
 import { Plus, Trash2, Upload } from 'lucide-react';
 import type { Color, Fill, Geometry, Keyframe, Layer, LayerKind, ShapeItem, Stroke, TextAnimator, TextUnit, Gradient } from '../../types/project';
@@ -391,7 +391,8 @@ export function MeshSection({ layer }: { layer: Layer }) {
 export function MaterialSection({ layer }: { layer: Layer }) {
   const L = [layer];
   const m = layer.material;
-  const images = useEditor((s) => s.project?.assets.filter((a) => a.kind === 'image' || a.kind === 'video') ?? []);
+  const assets = useEditor((s) => s.project?.assets);
+  const images = useMemo(() => (assets ?? []).filter((a) => a.kind === 'image' || a.kind === 'video'), [assets]);
   const set = (label: string, fn: (mm: Draft<Layer['material']>) => void, co?: string) => ed(layer, label, (l) => fn(l.material), co);
   return (
     <Section title="Material" id="insp-material">

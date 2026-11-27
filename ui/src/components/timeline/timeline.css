@@ -46,7 +46,7 @@
 .tl-right { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--bg-1); overflow: hidden; }
 .tl-ruler { position: relative; flex-shrink: 0; background: var(--bg-2); border-bottom: 1px solid var(--border); cursor: ew-resize; overflow: hidden; }
 .tl-ruler canvas { display: block; }
-.tl-wa { position: absolute; top: 19px; height: 8px; background: rgba(242, 141, 150, 0.22); border-radius: 2px; cursor: grab; }
+.tl-wa { position: absolute; top: 19px; height: 8px; background: rgba(255, 255, 255, 0.22); border-radius: 2px; cursor: grab; }
 .tl-wa-h { position: absolute; top: -2px; width: 6px; height: 12px; background: var(--accent); border-radius: 2px; cursor: ew-resize; }
 .tl-wa-h.l { left: -3px; }
 .tl-wa-h.r { right: -3px; }
@@ -58,7 +58,7 @@
 .tl-end { position: absolute; top: 0; bottom: 0; width: 1px; background: #3a3a3a; pointer-events: none; }
 .tl-wa-shade { position: absolute; top: 0; bottom: 0; background: rgba(0, 0, 0, 0.22); pointer-events: none; }
 .tl-track { position: absolute; left: 0; right: 0; border-bottom: 1px solid #1c1c1c; }
-.tl-track.sel { background: rgba(242, 141, 150, 0.04); }
+.tl-track.sel { background: rgba(255, 255, 255, 0.035); }
 .tl-track.prop { background: #141414; border-bottom-color: #191919; }
 .tl-marker-line { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(234, 164, 170, 0.25); pointer-events: none; }
 .tl-empty-hint { position: absolute; top: 40px; left: 24px; color: var(--text-3); pointer-events: none; }
@@ -80,7 +80,7 @@
 .tl-trim { position: absolute; top: 0; bottom: 0; width: 6px; cursor: ew-resize; z-index: 3; }
 .tl-trim.l { left: 0; }
 .tl-trim.r { right: 0; }
-.tl-clip:hover .tl-trim { background: rgba(242, 141, 150, 0.25); }
+.tl-clip:hover .tl-trim { background: rgba(255, 255, 255, 0.25); }
 .tl-trans { position: absolute; top: 0; bottom: 0; z-index: 2; background: linear-gradient(to top right, rgba(255, 255, 255, 0.16) 49.5%, transparent 50.5%); border: 1px solid rgba(255, 255, 255, 0.25); }
 .tl-trans.out { background: linear-gradient(to top left, rgba(255, 255, 255, 0.16) 49.5%, transparent 50.5%); }
 .tl-trans-h { position: absolute; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }

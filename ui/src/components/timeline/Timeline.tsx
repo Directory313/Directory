@@ -7,6 +7,7 @@ import './timeline.css';
 import './tlactions';
 import type { Asset, Composition, Layer, Transform, Prop } from '../../types/project';
 import { draftComp, useComp, useEditor } from '../../store/editor';
+import { NONE } from '../../store/editor';
 import { addAssetLayer, openComp, splitAtPlayhead } from '../../lib/ops';
 import { api, isTauri } from '../../lib/api';
 import { formatTime, parseTime } from '../../lib/anim';
@@ -46,7 +47,7 @@ function TimelineInner({ comp }: { comp: Composition }) {
   const viewH = useTL((s) => s.viewH);
   const defs = useEditor((s) => s.effectDefs);
   const selected = useEditor((s) => s.selectedLayers);
-  const assets = useEditor((s) => s.project?.assets ?? []);
+  const assets = useEditor((s) => s.project?.assets ?? NONE);
   const scroller = useRef<HTMLDivElement>(null);
   const leftList = useRef<HTMLDivElement>(null);
   const [marquee, setMarquee] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
@@ -391,7 +392,7 @@ const Playhead = memo(function Playhead({ fps }: { fps: number }) {
 function Breadcrumb() {
   const stack = useEditor((s) => s.compStack);
   const compId = useEditor((s) => s.compId);
-  const comps = useEditor((s) => s.project?.compositions ?? []);
+  const comps = useEditor((s) => s.project?.compositions ?? NONE);
   const chain = stack.length ? stack : [compId];
   return (
     <span className="tl-crumbs">

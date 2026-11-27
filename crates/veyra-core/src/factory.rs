@@ -136,11 +136,11 @@ pub fn geometry(kind: &str, size: f64) -> Geometry {
 
 pub fn shape_layer(comp: &Composition, kind: &str, start: f64) -> Layer {
     let size = (comp.height as f64 / 3.0).round();
-    let mut item = shape_item(geometry(kind, size), kind, [0.949, 0.553, 0.588, 1.0]);
+    let mut item = shape_item(geometry(kind, size), kind, [1.0, 1.0, 1.0, 1.0]);
     if matches!(kind, "line" | "arrow" | "path") {
         item.fills[0].enabled = kind == "path";
         item.strokes[0].width.value = 8.0;
-        item.strokes[0].color.value = [0.949, 0.553, 0.588, 1.0];
+        item.strokes[0].color.value = [1.0, 1.0, 1.0, 1.0];
         if kind != "path" {
             item.offset.value = [-size / 2.0, 0.0];
         }
@@ -236,7 +236,7 @@ pub fn mesh_layer(comp: &Composition, primitive: &str, start: f64) -> Layer {
     l.transform.anchor.value = [0.0, 0.0, 0.0];
     l.transform.rotation.value = [-20.0, 30.0, 0.0];
     l.material.lit = true;
-    l.material.base_color.value = [0.949, 0.553, 0.588, 1.0];
+    l.material.base_color.value = [1.0, 1.0, 1.0, 1.0];
     l.material.roughness.value = 0.35;
     l
 }
@@ -300,11 +300,11 @@ pub fn generator_layer(comp: &Composition, kind: GeneratorKind, start: f64) -> L
             put("speed", ParamValue::Num(1.0));
             put("lines", ParamValue::Num(8.0));
             put("width", ParamValue::Num(3.0));
-            put("color", ParamValue::Vec(vec![0.949, 0.553, 0.588, 1.0]));
+            put("color", ParamValue::Vec(vec![1.0, 1.0, 1.0, 1.0]));
         }
         GeneratorKind::Gradient => {
             put("colorA", ParamValue::Vec(vec![0.06, 0.06, 0.06, 1.0]));
-            put("colorB", ParamValue::Vec(vec![0.949, 0.553, 0.588, 1.0]));
+            put("colorB", ParamValue::Vec(vec![1.0, 1.0, 1.0, 1.0]));
             put("angle", ParamValue::Num(90.0));
         }
         GeneratorKind::Checkerboard => {
@@ -314,7 +314,7 @@ pub fn generator_layer(comp: &Composition, kind: GeneratorKind, start: f64) -> L
         }
         GeneratorKind::AnimatedBackground => {
             put("colorA", ParamValue::Vec(vec![0.07, 0.07, 0.07, 1.0]));
-            put("colorB", ParamValue::Vec(vec![0.949, 0.553, 0.588, 1.0]));
+            put("colorB", ParamValue::Vec(vec![1.0, 1.0, 1.0, 1.0]));
             put("speed", ParamValue::Num(0.2));
             put("scale", ParamValue::Num(500.0));
         }

@@ -1,6 +1,6 @@
-# VEYRA Architecture
+# Directory Architecture
 
-VEYRA is a Tauri 2 desktop application. All media processing, evaluation, rendering and
+Directory is a Tauri 2 desktop application. All media processing, evaluation, rendering and
 encoding happen in Rust; the React/TypeScript frontend is a thin editing UI that owns the
 project document and sends it to the engine.
 

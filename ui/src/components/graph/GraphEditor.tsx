@@ -4,10 +4,10 @@ import { Activity, Magnet, Maximize, Minus, ScanSearch, Spline, Square, Trending
 import '../timeline/timeline.css';
 import type { Composition, Handle, Keyframe, Layer, Prop, Project } from '../../types/project';
 import { draftComp, getPath, useComp, useEditor, type KeySel } from '../../store/editor';
-import { evalKeys, HANDLE_IN_LINEAR, HANDLE_OUT_LINEAR } from '../../lib/anim';
+import { EASINGS, evalKeys, HANDLE_IN_LINEAR, HANDLE_OUT_LINEAR } from '../../lib/anim';
 import { NumberField } from '../ui/primitives';
 import { animatedProps, graphId, niceStep, parseGraphId } from '../timeline/model';
-import { isKeySelected, setInterp } from '../timeline/keyops';
+import { applyEasingToSelection, isKeySelected, setInterp } from '../timeline/keyops';
 
 const S = () => useEditor.getState();
 const COMP_COLORS = ['#e46470', '#8fbf9a', '#7fb2e5', '#c9c9c9'];
@@ -183,7 +183,7 @@ export function GraphEditor() {
     for (const cv of visible) {
       const comps = mode === 'speed' ? 1 : cv.n;
       for (let c = 0; c < comps; c++) {
-        g.strokeStyle = cv.n === 1 || mode === 'speed' ? '#f28d96' : COMP_COLORS[c] ?? '#ccc';
+        g.strokeStyle = cv.n === 1 || mode === 'speed' ? '#ffffff' : COMP_COLORS[c] ?? '#ccc';
         g.lineWidth = 1.5;
         g.beginPath();
         for (let x = PAD_L; x <= size.w; x += 2) {
@@ -206,11 +206,11 @@ export function GraphEditor() {
               if (!hp) continue;
               g.strokeStyle = '#888'; g.lineWidth = 1;
               g.beginPath(); g.moveTo(x, y); g.lineTo(tx(hp[0]), vy(hp[1])); g.stroke();
-              g.fillStyle = '#ffc0c5';
+              g.fillStyle = '#ffffff';
               g.beginPath(); g.arc(tx(hp[0]), vy(hp[1]), 3.5, 0, Math.PI * 2); g.fill();
             }
           }
-          g.fillStyle = sel ? '#f28d96' : '#d0d0d0';
+          g.fillStyle = sel ? '#ffffff' : '#9a9a9a';
           g.strokeStyle = '#111';
           g.lineWidth = 1;
           g.beginPath();
@@ -222,7 +222,7 @@ export function GraphEditor() {
     }
     // playhead
     const px = tx(time);
-    g.strokeStyle = '#f28d96'; g.lineWidth = 1;
+    g.strokeStyle = '#ffffff'; g.lineWidth = 1;
     g.beginPath(); g.moveTo(px + 0.5, 0); g.lineTo(px + 0.5, size.h); g.stroke();
     if (!visible.length) {
       g.fillStyle = '#686868'; g.font = '12px Segoe UI, sans-serif';
@@ -410,6 +410,25 @@ export function GraphEditor() {
         <button className="icon-btn" title="Hold" onClick={() => setInterp('hold')}><Square size={13} /></button>
         <button className="btn sm ghost" title="Ease in" onClick={() => setInterp('easeIn')}>In</button>
         <button className="btn sm ghost" title="Ease out" onClick={() => setInterp('easeOut')}>Out</button>
+        <select className="input sm ge-ease" value="" title="Apply an easing curve to the selected keyframes (changes the curve only, adds no keys)"
+          onChange={(e) => { const ez = EASINGS.find((x) => x.id === e.target.value); if (ez) applyEasingToSelection(ez); }}>
+          <option value="">Easing curve…</option>
+          {[...new Set(EASINGS.map((x) => x.group))].map((g) => (
+            <optgroup key={g} label={g}>{EASINGS.filter((x) => x.group === g).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</optgroup>
+          ))}
+        </select>
+        {fk && fc && /^(elastic|bounce)/.test(fk.interp ?? '') && (
+          <span className="row" style={{ gap: 4 }} title="Strength of the elastic overshoot / bounce height">
+            <span className="label">Amount</span>
+            <NumberField value={(fk.amount ?? 1) * 100} min={0} max={400} step={5} precision={0} unit="%"
+              onChange={(v) => S().edit('Easing Amount', (d) => {
+                const l = draftComp(d)?.layers.find((x) => x.id === fc.layer.id);
+                const p = l ? (getPath(l, fc.path) as Prop<unknown> | undefined) : undefined;
+                const k = p?.keys?.find((x) => Math.abs(x.t - fk.t) < 1e-3);
+                if (k) k.amount = Math.max(0, v / 100);
+              }, `ease-amt:${fc.layer.id}:${fc.path}`)} />
+          </span>
+        )}
         <span className="vsep" />
         <button className={`icon-btn ${snap ? 'active' : ''}`} title="Snap key times to frames" onClick={() => setSnap(!snap)}><Magnet size={14} /></button>
         <button className="icon-btn" title="Fit selection" onClick={() => fit(true)}><ScanSearch size={14} /></button>

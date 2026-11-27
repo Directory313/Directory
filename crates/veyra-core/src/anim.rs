@@ -19,6 +19,14 @@ pub enum Interp {
     Linear,
     Hold,
     Bezier,
+    /// Springy overshoot that settles on the next key (`amount` = overshoot strength).
+    ElasticOut,
+    /// Wind-up oscillation that leaves this key before travelling to the next.
+    ElasticIn,
+    /// Lands on the next key and bounces (`amount` = bounciness).
+    BounceOut,
+    /// Bounces away from this key before travelling to the next.
+    BounceIn,
 }
 
 /// A normalised cubic-bezier control point inside a segment (x = time 0..1, y = progress).
@@ -52,14 +60,69 @@ pub struct Keyframe<T> {
     /// Incoming handle (used by the segment that ends at this key).
     #[serde(default = "default_in")]
     pub in_h: Handle,
+    /// Strength of elastic / bounce easing on the outgoing segment (1 = default).
+    #[serde(default = "default_amount", skip_serializing_if = "is_default_amount")]
+    pub amount: f64,
+}
+
+fn default_amount() -> f64 {
+    1.0
+}
+fn is_default_amount(v: &f64) -> bool {
+    (*v - 1.0).abs() < 1e-12
+}
+
+/// Elastic ease-out: overshoots the target and settles. `amount` scales the overshoot.
+pub fn elastic_out(x: f64, amount: f64) -> f64 {
+    if x <= 0.0 {
+        return 0.0;
+    }
+    if x >= 1.0 {
+        return 1.0;
+    }
+    let c4 = (2.0 * std::f64::consts::PI) / 3.0;
+    1.0 + 2f64.powf(-10.0 * x) * ((x * 10.0 - 0.75) * c4).sin() * amount.clamp(0.0, 4.0)
+}
+
+/// Bounce ease-out (Penner). `amount` scales the height of the rebounds.
+pub fn bounce_out(x: f64, amount: f64) -> f64 {
+    let x = x.clamp(0.0, 1.0);
+    let (n1, d1) = (7.5625, 2.75);
+    if x < 1.0 / d1 {
+        return n1 * x * x;
+    }
+    let y = if x < 2.0 / d1 {
+        let x = x - 1.5 / d1;
+        n1 * x * x + 0.75
+    } else if x < 2.5 / d1 {
+        let x = x - 2.25 / d1;
+        n1 * x * x + 0.9375
+    } else {
+        let x = x - 2.625 / d1;
+        n1 * x * x + 0.984375
+    };
+    1.0 - (1.0 - y) * amount.clamp(0.0, 4.0)
+}
+
+/// Progress (0..1, may overshoot) of the segment leaving key `a` towards key `b`.
+pub fn segment_progress<T>(a: &Keyframe<T>, b: &Keyframe<T>, x: f64) -> f64 {
+    match a.interp {
+        Interp::Hold => 0.0,
+        Interp::Linear => x,
+        Interp::Bezier => cubic_bezier_ease(a.out_h, b.in_h, x),
+        Interp::ElasticOut => elastic_out(x, a.amount),
+        Interp::ElasticIn => 1.0 - elastic_out(1.0 - x, a.amount),
+        Interp::BounceOut => bounce_out(x, a.amount),
+        Interp::BounceIn => 1.0 - bounce_out(1.0 - x, a.amount),
+    }
 }
 
 impl<T> Keyframe<T> {
     pub fn new(t: f64, v: T) -> Self {
-        Self { t, v, interp: Interp::Linear, out_h: HANDLE_OUT_LINEAR, in_h: HANDLE_IN_LINEAR }
+        Self { t, v, interp: Interp::Linear, out_h: HANDLE_OUT_LINEAR, in_h: HANDLE_IN_LINEAR, amount: 1.0 }
     }
     pub fn eased(t: f64, v: T) -> Self {
-        Self { t, v, interp: Interp::Bezier, out_h: Handle { x: 0.33, y: 0.0 }, in_h: Handle { x: 0.67, y: 1.0 } }
+        Self { t, v, interp: Interp::Bezier, out_h: Handle { x: 0.33, y: 0.0 }, in_h: Handle { x: 0.67, y: 1.0 }, amount: 1.0 }
     }
 }
 
@@ -204,12 +267,7 @@ pub fn eval_keys<T: Lerp>(keys: &[Keyframe<T>], fallback: &T, t: f64) -> T {
     let (a, b) = (&keys[i], &keys[i + 1]);
     let span = (b.t - a.t).max(1e-12);
     let x = (t - a.t) / span;
-    let p = match a.interp {
-        Interp::Hold => 0.0,
-        Interp::Linear => x,
-        Interp::Bezier => cubic_bezier_ease(a.out_h, b.in_h, x),
-    };
-    T::lerp(&a.v, &b.v, p)
+    T::lerp(&a.v, &b.v, segment_progress(a, b, x))
 }
 
 impl<T: Lerp> Prop<T> {
@@ -351,6 +409,24 @@ impl Lerp for BezPath {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn elastic_and_bounce_segments() {
+        let mut p = Prop::new(0.0);
+        p.set_key(0.0, 0.0);
+        p.set_key(1.0, 100.0);
+        p.keys[0].interp = Interp::ElasticOut;
+        assert_eq!(p.keys.len(), 2);
+        let peak = (1..100).map(|i| p.at(i as f64 / 100.0)).fold(f64::MIN, f64::max);
+        assert!(peak > 105.0, "elastic must overshoot, got {peak}");
+        assert!((p.at(1.0) - 100.0).abs() < 1e-9);
+        p.keys[0].interp = Interp::BounceOut;
+        assert!((p.at(0.999999) - 100.0).abs() < 0.01);
+        assert!(p.at(0.5) > 50.0);
+        // The amount field round-trips and defaults to 1.
+        let k: Keyframe<f64> = serde_json::from_str(r#"{"t":0,"v":1,"interp":"bounceOut"}"#).unwrap();
+        assert_eq!((k.interp, k.amount), (Interp::BounceOut, 1.0));
+    }
 
     #[test]
     fn linear_interpolation() {

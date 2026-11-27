@@ -1,8 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "VEYRA",
-  "version": "0.9.0",
-  "identifier": "studio.veyra.editor",
+  "productName": "Directory",
+  "version": "0.9.1",
+  "mainBinaryName": "Directory",
+  "identifier": "studio.directory.editor",
   "build": {
     "frontendDist": "../ui/dist",
     "devUrl": "http://localhost:5173"
@@ -12,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "VEYRA Beta",
+        "title": "Directory Beta",
         "width": 1600,
         "height": 960,
         "minWidth": 1100,
@@ -35,11 +36,11 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "msi"],
-    "publisher": "VEYRA",
+    "publisher": "Directory",
     "category": "Video",
     "shortDescription": "Video editing and motion graphics",
-    "longDescription": "VEYRA Beta: a GPU-accelerated desktop video editor, compositor and motion graphics application.",
-    "copyright": "VEYRA contributors. FFmpeg is licensed under the GPL; see resources/ffmpeg/LICENSE-FFmpeg.txt.",
+    "longDescription": "Directory Beta: a GPU-accelerated desktop video editor, compositor and motion graphics application.",
+    "copyright": "Directory contributors. FFmpeg is licensed under the GPL; see resources/ffmpeg/LICENSE-FFmpeg.txt.",
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
     "resources": {
       "resources/ffmpeg/ffmpeg.exe": "ffmpeg/ffmpeg.exe",

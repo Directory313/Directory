@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { AlertTriangle, Box, Clapperboard, FileAudio, FileImage, FolderPlus, Grid2x2, Image as ImageIcon, List, Music, Pause, Play, Plus, Star, Upload } from 'lucide-react';
 import { useEditor } from '../../store/editor';
+import { NONE } from '../../store/editor';
 import { api, fileSrc } from '../../lib/api';
 import { addAssetLayer } from '../../lib/ops';
 import { runAction } from '../../lib/actions';
@@ -128,8 +129,8 @@ const AssetTile = memo(function AssetTile({ a, selected, list }: { a: Asset; sel
 });
 
 export function MediaPanel() {
-  const assets = useEditor((s) => s.project?.assets ?? []);
-  const folders = useEditor((s) => s.project?.folders ?? []);
+  const assets = useEditor((s) => s.project?.assets ?? NONE);
+  const folders = useEditor((s) => s.project?.folders ?? NONE);
   const selected = useEditor((s) => s.selectedAssets);
   const [q, setQ] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');

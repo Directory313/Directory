@@ -7,7 +7,7 @@
 | Microsoft Edge WebView2 | system | Microsoft | UI host (installer bootstraps it) |
 
 The FFmpeg build's licence and build description are shipped in `ffmpeg/`. Because a GPL
-FFmpeg build is distributed, VEYRA is distributed under GPL-3.0-or-later and the FFmpeg
+FFmpeg build is distributed, Directory is distributed under GPL-3.0-or-later and the FFmpeg
 source is available from https://ffmpeg.org and https://www.gyan.dev/ffmpeg/builds/.
 
 ## Rust crates (main)

@@ -1,4 +1,4 @@
-# VEYRA Beta — Feature Status, Test Report & Performance Review
+# Directory Beta — Feature Status, Test Report & Performance Review
 
 Build machine: Windows 11 Pro, Intel UHD Graphics (Vulkan), 8 logical CPUs, 7.8 GB RAM.
 Test date: 2026-11-26.
@@ -94,7 +94,7 @@ the shape ✅.
 
 ### Packaging (verified)
 `release/VEYRA_0.9.0_x64-setup.exe` (NSIS, per-user, 130 MB), `release/VEYRA_0.9.0_x64_en-US.msi`
-(184 MB), `release/VEYRA-Beta-portable.zip` (183 MB). The NSIS installer was installed silently
+(184 MB), `release/Directory-Beta-portable.zip` (183 MB). The NSIS installer was installed silently
 on the build machine and the installed app was launched and exercised (above). The MSI and the
 portable ZIP were built but not separately installed/launched.
 
@@ -102,3 +102,20 @@ Optimisations in place: decoder processes persist and stream sequentially (no re
 playback); render/encode overlap via a writer thread; texture pooling with submission-
 ordered recycling; preview requests coalesce (one in flight); per-layer cache keys; adaptive
 preview scale; dependency crates built optimised even in debug.
+
+## 0.9.1 update (2026-11-27): beta bug-report fixes
+
+Renamed to **Directory** (new logo, white accent). Full details of each fix and its root cause are in
+`docs/NEXT_VERSION.md` → "Resolution log".
+
+| Suite | Result |
+|---|---|
+| veyra-core | 27 passed (adds elastic/bounce easing) |
+| veyra-render GPU | 12 passed (adds exact picked colours for solid/rect/ellipse/text on opaque and transparent comps, and 3D rotation on every axis for a 3D layer and a mesh) |
+| UI (vitest) | 15 passed (adds easing curves, safe number-field arithmetic) |
+| App E2E (dev build) | Preview stress test (640 rapid edits) follows edits; ellipse tool, exact colour via picker, layer reorder, 3D rotation (layer + cube), easing keeps 2 keys, per-project layout (6 checks): all pass |
+| App E2E (**release build**, strict CSP) | Typed scale/rotation/opacity/position apply and show in the preview; `*2` arithmetic; 3D inspector does not crash; 3D X/Y rotation; import + render + 3 s 720p H.264/AAC export in 3.1 s, output probed: all pass |
+
+Packaging: `release/Directory_0.9.1_x64-setup.exe` (130 MB), `release/Directory_0.9.1_x64_en-US.msi`
+(184 MB), `release/Directory-Beta-portable.zip` (183 MB). The release exe was run and tested
+directly. The installers were built but **not** installed on this machine.

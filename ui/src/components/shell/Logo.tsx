@@ -1,12 +1,13 @@
+// Directory logo: the "D" mark with a play-triangle cut-out (source: assets/brand/directory-mark.svg).
+export const MARK_PATH = 'M0,0 H166 A148,146.5 0 0 1 166,293 H93 V231.8 L0,285 Z M88,63 L241,147 L88,234.7 Z';
+
 export function Logo({ size = 22, word = false }: { size?: number; word?: boolean }) {
   return (
     <span className="row" style={{ gap: 8 }}>
-      <svg width={size} height={size} viewBox="0 0 64 64" aria-label="VEYRA">
-        <rect width="64" height="64" rx="14" fill="#101010" stroke="#2a2a2a" />
-        <path d="M18.5 20 L32 46 L45.5 20" fill="none" stroke="#F28D96" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="32" cy="14.5" r="3.4" fill="#FFC0C5" />
+      <svg width={size} height={size} viewBox="-4 -14 322 322" aria-label="Directory">
+        <path d={MARK_PATH} fill="currentColor" fillRule="evenodd" />
       </svg>
-      {word && <span style={{ fontWeight: 700, letterSpacing: '0.32em', fontSize: size * 0.55 }}>VEYRA</span>}
+      {word && <span style={{ fontWeight: 600, letterSpacing: '0.08em', fontSize: size * 0.62 }}>Directory</span>}
     </span>
   );
 }

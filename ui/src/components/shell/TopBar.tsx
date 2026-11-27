@@ -4,7 +4,8 @@ import { useEditor } from '../../store/editor';
 import { runAction, shortcutFor } from '../../lib/actions';
 import { Menu, Popover, type MenuItem } from '../ui/primitives';
 import { WORKSPACE_NAMES } from './workspaces';
-import { setWorkspace, showPanel } from './EditorShell';
+import { isPanelOpen, setWorkspace, togglePanel } from './EditorShell';
+import { PANEL_NAMES, type PanelId } from './workspaces';
 import { Logo } from './Logo';
 
 const SAVE_LABEL: Record<string, string> = { saved: 'Saved', saving: 'Saving…', unsaved: 'Unsaved changes', autosaved: 'Autosaved', error: 'Save failed' };
@@ -44,7 +45,7 @@ export function TopBar({ workspace }: { workspace: string }) {
           <MenuButton label="Layer" items={() => [a('layer.newText', 'New Text'), a('layer.newSolid', 'New Solid'), a('layer.newNull', 'New Null Object'), a('layer.newAdjustment', 'New Adjustment Layer'), { label: 'New Shape', submenu: ['rect', 'roundedRect', 'ellipse', 'polygon', 'star', 'triangle', 'line', 'arrow'].map((v) => a(`layer.shape.${v}`, v)) }, a('layer.newParticles', 'New Particle System'), { label: 'New Generator', submenu: ['grid', 'noise', 'wave', 'gradient', 'checkerboard', 'animatedBackground'].map((v) => a(`layer.gen.${v}`, v)) }, { separator: true }, a('edit.split', 'Split at Playhead'), a('edit.precompose', 'Create Compound Clip'), a('layer.lock', 'Lock / Unlock'), a('layer.hide', 'Hide / Show'), { separator: true }, a('layer.front', 'Bring to Front'), a('layer.forward', 'Bring Forward'), a('layer.backward', 'Send Backward'), a('layer.back', 'Send to Back')]} />
           <MenuButton label="3D" items={() => [a('layer.newCamera', 'New Camera'), a('layer.newLightPoint', 'Point Light'), a('layer.newLightSpot', 'Spot Light'), a('layer.newLightDir', 'Directional Light'), a('layer.newLightAmbient', 'Ambient Light'), { separator: true }, ...['cube', 'sphere', 'cylinder', 'cone', 'torus', 'plane', 'pyramid'].map((v) => a(`layer.mesh.${v}`, `New ${v}`))]} />
           <MenuButton label="Composition" items={() => [a('comp.new', 'New Composition'), a('comp.settings', 'Composition Settings…'), a('comp.nest', 'Nest Composition'), { separator: true }, a('app.clearCache', 'Clear Render Cache')]} />
-          <MenuButton label="Window" items={() => [{ header: 'Workspaces' }, ...WORKSPACE_NAMES.map((n) => ({ label: n, checked: n === workspace, shortcut: shortcutFor(`workspace.${n}`), action: () => setWorkspace(n) })), a('workspace.reset', 'Reset Workspace'), { separator: true }, { header: 'Panels' }, ...(['media', 'library', 'viewer', 'inspector', 'timeline', 'graph', 'scopes', 'mixer', 'queue', 'hierarchy'] as const).map((p) => ({ label: `Show ${p[0].toUpperCase()}${p.slice(1)}`, action: () => showPanel(p) }))]} />
+          <MenuButton label="Window" items={() => [{ header: 'Workspaces' }, ...WORKSPACE_NAMES.map((n) => ({ label: n, checked: n === workspace, shortcut: shortcutFor(`workspace.${n}`), action: () => setWorkspace(n) })), a('workspace.reset', 'Reset Workspace'), { separator: true }, { header: 'Panels (click to show / hide)' }, ...(Object.keys(PANEL_NAMES) as PanelId[]).map((p) => ({ label: PANEL_NAMES[p], checked: isPanelOpen(p), action: () => togglePanel(p) }))]} />
         </nav>
       </div>
 

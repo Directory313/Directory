@@ -4,6 +4,7 @@ import type { Draft } from 'immer';
 import { ChevronDown, ChevronRight, ClipboardPaste, Copy, CopyPlus, FolderOpen, GripVertical, Plus, RotateCcw, Save, Star, Trash2 } from 'lucide-react';
 import type { Effect, EffectDef, Layer, ParamDef, ParamValue } from '../../types/project';
 import { getPath, newLocalId, useEditor } from '../../store/editor';
+import { NONE } from '../../store/editor';
 import { api, isTauri } from '../../lib/api';
 import { paramNum, propAt } from '../../lib/anim';
 import { ColorField, NumberField, Popover, SearchBox, Select, Slider, Toggle } from '../ui/primitives';
@@ -80,7 +81,7 @@ export function EffectsList({ layer, audio = false }: { layer: Layer; audio?: bo
 
 function AddEffectMenu({ audio, onPick, onPreset }: { audio: boolean; onPick: (kind: string) => void; onPreset: (data: unknown) => void }) {
   const defs = useEditor((s) => s.effectDefs);
-  const favs = useEditor((s) => s.settings?.favoriteEffects ?? []);
+  const favs = useEditor((s) => s.settings?.favoriteEffects ?? NONE);
   const [q, setQ] = useState('');
   const [presets, setPresets] = useState<{ name: string; data: unknown }[]>([]);
   useEffect(() => { if (isTauri && !audio) void api.listPresets('effect').then(setPresets).catch(() => {}); }, [audio]);
@@ -117,7 +118,7 @@ function EffectCard({ layer, effect, index, count, base, def, mutate, onDragStar
   const [open, setOpen] = useState(true);
   const [adv, setAdv] = useState(false);
   const [saving, setSaving] = useState<HTMLElement | null>(null);
-  const favs = useEditor((s) => s.settings?.favoriteEffects ?? []);
+  const favs = useEditor((s) => s.settings?.favoriteEffects ?? NONE);
   const path = `${base}.${effect.id}.params`;
   const name = effect.name || def?.name || effect.kind;
   const at = (fn: (arr: Draft<Effect>[], i: number) => void) => (label: string) => mutate(label, (arr) => { const i = arr.findIndex((x) => x.id === effect.id); if (i >= 0) fn(arr, i); });

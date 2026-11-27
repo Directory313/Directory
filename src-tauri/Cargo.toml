@@ -3,7 +3,7 @@ name = "veyra"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "VEYRA Beta — desktop video editor and motion graphics suite"
+description = "Directory Beta — desktop video editor and motion graphics suite"
 default-run = "veyra"
 
 [lib]

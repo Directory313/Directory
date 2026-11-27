@@ -2,7 +2,7 @@
 import type { Draft } from 'immer';
 import type { Keyframe, Layer, Project, Prop } from '../../types/project';
 import { activeComp, draftComp, getPath, useEditor, type KeySel } from '../../store/editor';
-import { EASE_IN_HANDLE, EASE_OUT_HANDLE, HANDLE_IN_LINEAR, HANDLE_OUT_LINEAR, propAt, setKey } from '../../lib/anim';
+import { applyEasing, EASE_IN_HANDLE, EASE_OUT_HANDLE, HANDLE_IN_LINEAR, HANDLE_OUT_LINEAR, propAt, setKey, type Easing } from '../../lib/anim';
 
 const S = () => useEditor.getState();
 const near = (a: number, b: number) => Math.abs(a - b) < 1e-3;
@@ -178,4 +178,58 @@ export function selectAllOnRow(layerId: string, path: string) {
 export function valueAt(layer: Layer, path: string, lt: number) {
   const p = getPath(layer, path) as Prop<unknown> | undefined;
   return p ? propAt(p, lt) : undefined;
+}
+
+/** Every animatable prop path (with 2+ keys) on a layer, found by walking the layer object. */
+export function animatedPaths(l: Layer): string[] {
+  const out: string[] = [];
+  const walk = (o: unknown, path: string, depth: number) => {
+    if (!o || typeof o !== 'object' || depth > 7) return;
+    if (!Array.isArray(o) && 'value' in (o as object) && Array.isArray((o as Prop<unknown>).keys)) {
+      if (((o as Prop<unknown>).keys?.length ?? 0) > 1) out.push(path);
+      return;
+    }
+    if (Array.isArray(o)) { o.forEach((x, i) => walk(x, `${path}.${(x as { id?: string })?.id ?? i}`, depth + 1)); return; }
+    for (const [k, v] of Object.entries(o as object)) walk(v, path ? `${path}.${k}` : k, depth + 1);
+  };
+  walk(l, '', 0);
+  return out;
+}
+
+/**
+ * Apply an easing curve to existing keyframe segments — never adds keys.
+ * Targets: the segments leaving the selected keyframes; with no keys selected, every
+ * segment of every animated property on the selected layers. Returns segments changed.
+ */
+export function applyEasingToSelection(e: Easing): number {
+  const s = S();
+  const comp = activeComp();
+  if (!comp) return 0;
+  let targets = groupSel(s.selectedKeys).map((g) => ({ ...g, all: false }));
+  if (!targets.length) {
+    targets = comp.layers.filter((l) => s.selectedLayers.includes(l.id))
+      .flatMap((l) => animatedPaths(l).map((path) => ({ layerId: l.id, path, times: [] as number[], all: true })));
+  }
+  let n = 0;
+  s.edit(`Easing: ${e.name}`, (d) => {
+    for (const g of targets) {
+      const p = propIn(d, g.layerId, g.path);
+      if (!p?.keys || p.keys.length < 2) continue;
+      const ks = p.keys as Keyframe<unknown>[];
+      ks.forEach((k, i) => {
+        if (i === ks.length - 1) return;
+        // A selected last key eases the segment arriving at it instead.
+        if (!g.all && !g.times.some((t) => near(t, k.t))) return;
+        applyEasing(e, k, ks[i + 1]);
+        n++;
+      });
+      if (!g.all) {
+        const last = ks[ks.length - 1];
+        if (g.times.some((t) => near(t, last.t)) && !g.times.some((t) => near(t, ks[ks.length - 2].t))) { applyEasing(e, ks[ks.length - 2], last); n++; }
+      }
+    }
+  });
+  if (!n) s.toast('info', 'Nothing to ease', 'Select keyframes (or a layer with at least two keyframes on a property) first. Easing changes the curve between existing keyframes.');
+  else s.toast('success', `${e.name} applied to ${n} segment${n === 1 ? '' : 's'}`);
+  return n;
 }

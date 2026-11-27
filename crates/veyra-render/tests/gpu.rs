@@ -254,3 +254,70 @@ fn transitions_and_adjustment_layer() {
     p.compositions[0].layers = vec![adj, l];
     assert_eq!(px(&render(&p, 0.5), 25, 25)[0], 0, "adjustment layer inverts everything below");
 }
+
+/// A picked colour must come out exactly (no gamma / premultiply drift) for solids, shapes,
+/// ellipses and text, on opaque and transparent comps.
+#[test]
+fn picked_colours_are_exact() {
+    let targets: [[u8; 3]; 4] = [[0x3A, 0x7B, 0xD5], [255, 0, 0], [0x12, 0xC4, 0x7E], [200, 200, 200]];
+    for transparent in [false, true] {
+        for rgb in targets {
+            let c = [rgb[0] as f64 / 255.0, rgb[1] as f64 / 255.0, rgb[2] as f64 / 255.0, 1.0];
+            let mut p = project(320, 180);
+            p.compositions[0].transparent = transparent;
+            let comp = p.compositions[0].clone();
+            let mut layers = vec![solid_layer(&comp, c, 0.0)];
+            for kind in ["rect", "ellipse"] {
+                let mut s = shape_layer(&comp, kind, 0.0);
+                if let LayerKind::Shape(sp) = &mut s.kind {
+                    sp.items[0].fills[0].color.value = c;
+                }
+                layers.push(s);
+            }
+            let mut t = text_layer(&comp, "MMMM", 0.0);
+            if let LayerKind::Text(tp) = &mut t.kind {
+                tp.fill.value = c;
+                tp.font_size.value = 120.0;
+            }
+            layers.push(t);
+            for l in layers {
+                let name = l.kind.type_name();
+                let mut q = p.clone();
+                q.compositions[0].layers = vec![l];
+                let img = render(&q, 0.5);
+                // The most common opaque pixel must be the exact picked colour.
+                let mut counts = std::collections::HashMap::<[u8; 4], usize>::new();
+                for px in img.data.chunks_exact(4) {
+                    if px[3] == 255 && px[..3] != [0, 0, 0] {
+                        *counts.entry([px[0], px[1], px[2], px[3]]).or_default() += 1;
+                    }
+                }
+                let (top, _) = counts.into_iter().max_by_key(|(_, n)| *n).unwrap_or(([0; 4], 0));
+                assert_eq!(&top[..3], &rgb[..], "{name} (transparent={transparent}) colour drifted");
+            }
+        }
+    }
+}
+
+/// 3D rotation on every axis must change the rendered image of a 3D layer and a mesh.
+#[test]
+fn three_d_rotation_changes_image() {
+    let mut p = project(320, 180);
+    let comp = p.compositions[0].clone();
+    let mut solid = solid_layer(&comp, [0.2, 0.6, 1.0, 1.0], 0.0);
+    solid.is_3d = true;
+    solid.transform.scale.value = [40.0, 40.0, 100.0];
+    let mesh = mesh_layer(&comp, "cube", 0.0);
+    for l in [solid, mesh] {
+        let name = l.kind.type_name();
+        p.compositions[0].layers = vec![l.clone()];
+        let base = render(&p, 0.5);
+        for axis in 0..3 {
+            let mut q = p.clone();
+            q.compositions[0].layers[0].transform.rotation.value[axis] += 35.0;
+            let img = render(&q, 0.5);
+            let diff = base.data.iter().zip(&img.data).filter(|(a, b)| (**a as i32 - **b as i32).abs() > 8).count();
+            assert!(diff > 200, "{name}: rotating axis {axis} did not change the image ({diff} px)");
+        }
+    }
+}

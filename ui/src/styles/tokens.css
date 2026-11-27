@@ -1,4 +1,4 @@
-/* VEYRA design system — matte black, graphite, restrained pastel red. */
+/* Directory design system — matte black, graphite, white accent. */
 :root {
   --bg-0: #101010;        /* app background */
   --bg-1: #171717;        /* secondary */
@@ -10,20 +10,20 @@
   --text-1: #f4f4f4;
   --text-2: #a0a0a0;
   --text-3: #686868;
-  --accent: #f28d96;
-  --accent-2: #eaa4aa;
-  --accent-hi: #ffc0c5;
-  --accent-ink: #1a0d0f;
-  --accent-a12: rgba(242, 141, 150, 0.12);
-  --accent-a20: rgba(242, 141, 150, 0.20);
-  --accent-a35: rgba(242, 141, 150, 0.35);
-  --select: rgba(242, 141, 150, 0.16);
+  --accent: #ffffff;
+  --accent-2: #e2e2e2;
+  --accent-hi: #ffffff;
+  --accent-ink: #0e0e0e;
+  --accent-a12: rgba(255, 255, 255, 0.10);
+  --accent-a20: rgba(255, 255, 255, 0.16);
+  --accent-a35: rgba(255, 255, 255, 0.30);
+  --select: rgba(255, 255, 255, 0.12);
   --warn: #e7b46a;
   --error: #e4646c;
   --ok: #8fbf9a;
   --info: #7fb2e5;
-  --kf: #f28d96;
-  --track-video: #3a3134;
+  --kf: #ffffff;
+  --track-video: #33363b;
   --track-audio: #2c3530;
   --track-text: #3b3530;
   --track-shape: #33303d;

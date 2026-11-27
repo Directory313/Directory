@@ -17,6 +17,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let data = app.path().app_data_dir()?;
+            migrate_from_veyra(&data);
             let cache = app.path().app_local_data_dir()?.join("cache");
             let dirs = Dirs { autosave: data.join("autosave"), presets: data.join("presets"), logs: data.join("logs"), cache: cache.clone(), data: data.clone() };
             for d in [&dirs.data, &dirs.cache, &dirs.autosave, &dirs.presets, &dirs.logs] {
@@ -90,6 +91,8 @@ pub fn run() {
             commands::sync_project,
             commands::open_project,
             commands::save_project,
+            commands::read_project_layout,
+            commands::write_project_layout,
             commands::autosave,
             commands::list_recovery,
             commands::recover_project,
@@ -142,4 +145,37 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running VEYRA");
+}
+
+/// The app was renamed from VEYRA to Directory (new app identifier). On first launch, copy
+/// settings, presets and autosaves from the old data folder so nothing is lost.
+fn migrate_from_veyra(data: &std::path::Path) {
+    if data.exists() {
+        return;
+    }
+    let Some(parent) = data.parent() else { return };
+    let old = parent.join("studio.veyra.editor");
+    if !old.is_dir() {
+        return;
+    }
+    fn copy_dir(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
+        std::fs::create_dir_all(to)?;
+        for e in std::fs::read_dir(from)?.flatten() {
+            let p = e.path();
+            let name = e.file_name();
+            if name == "session.lock" || name == "logs" {
+                continue;
+            }
+            if p.is_dir() {
+                copy_dir(&p, &to.join(&name))?;
+            } else {
+                std::fs::copy(&p, to.join(&name))?;
+            }
+        }
+        Ok(())
+    }
+    match copy_dir(&old, data) {
+        Ok(()) => log::info!("migrated settings from {}", old.display()),
+        Err(e) => log::warn!("could not migrate old settings: {e}"),
+    }
 }

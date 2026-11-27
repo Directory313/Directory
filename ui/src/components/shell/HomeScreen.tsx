@@ -54,7 +54,7 @@ export function HomeScreen() {
         <Logo size={34} word />
         <div className="home-tag">BETA</div>
         <div className="col" style={{ gap: 4, marginTop: 28 }}>
-          <button className="home-link" onClick={async () => { const p = await open({ filters: [{ name: 'VEYRA Project', extensions: ['veyra'] }] }); if (p && !Array.isArray(p)) openProjectPath(p); }}><FolderOpen size={15} /> Open project…</button>
+          <button className="home-link" onClick={async () => { const p = await open({ filters: [{ name: 'Directory Project', extensions: ['directory', 'veyra'] }] }); if (p && !Array.isArray(p)) openProjectPath(p); }}><FolderOpen size={15} /> Open project…</button>
           <button className="home-link" onClick={async () => { const p = await open({ multiple: true, filters: MEDIA_FILTERS }); if (p) importPaths(Array.isArray(p) ? p : [p], 'timeline'); }}><Upload size={15} /> Start from footage…</button>
         </div>
         <div className="home-sys">
@@ -63,7 +63,7 @@ export function HomeScreen() {
           <div className="muted">{info ? `${info.cpuThreads} threads · ${info.ramGb.toFixed(0)} GB RAM · ${info.freeDiskGb.toFixed(0)} GB free` : ''}</div>
           <div className="muted">{info?.ffmpeg ? `Media engine ${info.ffmpeg.ffmpegVersion.split(' ').slice(0, 3).join(' ')}` : ''}</div>
           {info?.ffmpeg?.hwEncoders.length ? <div className="muted">HW encode: {info.ffmpeg.hwEncoders.join(', ')}</div> : null}
-          <div className="muted" style={{ marginTop: 6 }}>v{info?.version ?? '0.9.0'} · VEYRA Beta</div>
+          <div className="muted" style={{ marginTop: 6 }}>v{info?.version ?? '0.9.0'} · Directory Beta</div>
         </div>
       </aside>
 
@@ -72,7 +72,7 @@ export function HomeScreen() {
           <div className="recovery">
             <LifeBuoy size={18} />
             <div className="grow">
-              <div style={{ fontWeight: 600 }}>{info?.crashedLastTime ? 'VEYRA closed unexpectedly.' : 'Unsaved work was found.'} Recover your project?</div>
+              <div style={{ fontWeight: 600 }}>{info?.crashedLastTime ? 'Directory closed unexpectedly.' : 'Unsaved work was found.'} Recover your project?</div>
               {recovery.slice(0, 3).map((r) => (
                 <div key={r.autosavePath} className="row" style={{ marginTop: 6 }}>
                   <span className="grow">{r.name} <span className="muted">· {new Date(r.time * 1000).toLocaleString()}</span></span>

@@ -44,7 +44,7 @@ function draw(c: HTMLCanvasElement, s: Scopes, kind: Kind) {
     for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
       const v = Math.min(1, s.vectorscope[y * 64 + x] / max);
       if (!v) continue;
-      ctx.fillStyle = `rgba(242,141,150,${v})`;
+      ctx.fillStyle = `rgba(235,235,235,${v})`;
       ctx.fillRect(ox + (x / 64) * size, oy + (y / 64) * size, size / 64 + 1, size / 64 + 1);
     }
     // Skin-tone line (~123°).

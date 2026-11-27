@@ -5,9 +5,9 @@ export type Vec3 = [number, number, number];
 export type Color = [number, number, number, number];
 export type Id = string;
 
-export type Interp = 'linear' | 'hold' | 'bezier';
+export type Interp = 'linear' | 'hold' | 'bezier' | 'elasticOut' | 'elasticIn' | 'bounceOut' | 'bounceIn';
 export interface Handle { x: number; y: number }
-export interface Keyframe<T> { t: number; v: T; interp?: Interp; outH?: Handle; inH?: Handle }
+export interface Keyframe<T> { t: number; v: T; interp?: Interp; outH?: Handle; inH?: Handle; amount?: number }
 export interface Prop<T> { value: T; keys?: Keyframe<T>[]; expr?: string | null }
 
 export type ParamValue = boolean | number | number[] | string;

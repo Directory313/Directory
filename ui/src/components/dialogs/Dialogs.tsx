@@ -237,7 +237,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             {row('Disk cache', <div className="row"><Slider value={s.diskCacheMb} min={0} max={65536} step={256} onChange={(v) => set({ diskCacheMb: v })} width={200} /><span className="mono">{s.diskCacheMb} MB</span></div>)}
             {row('Cache location', folder(s.cacheDir, (p) => set({ cacheDir: p })))}
             {row('Cache usage', <div className="row"><span className="mono muted">{stats ? `${stats.frames} frames · RAM ${mb(stats.ramBytes)} · disk ${mb(stats.diskBytes)} · hit ${stats.hits}/${stats.hits + stats.misses}` : '…'}</span><button className="btn sm" onClick={async () => { await runAction('app.clearCache'); setStats(await api.cacheStats()); }}>Clear</button></div>)}
-            {row('CPU threads (0 = all)', num(s.cpuThreads, (v) => set({ cpuThreads: Math.max(0, v) })), 'Applies after restarting VEYRA.')}
+            {row('CPU threads (0 = all)', num(s.cpuThreads, (v) => set({ cpuThreads: Math.max(0, v) })), 'Applies after restarting Directory.')}
             {row('Hardware decoding', <Toggle on={s.hardwareDecode} onChange={(v) => set({ hardwareDecode: v })} />, info?.ffmpeg?.hwDecoders.length ? `Available: ${info.ffmpeg.hwDecoders.join(', ')}` : '')}
             {row('Hardware encoding', <Toggle on={s.hardwareEncode} onChange={(v) => set({ hardwareEncode: v })} />, info?.ffmpeg?.hwEncoders.length ? `Available: ${info.ffmpeg.hwEncoders.join(', ')}` : 'No hardware encoder detected')}
           </>}

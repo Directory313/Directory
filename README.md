@@ -1,10 +1,10 @@
-# VEYRA Beta
+# Directory Beta
 
 A GPU-accelerated desktop video editor and motion-graphics application for Windows:
 CapCut-style simplicity, After-Effects-style compositing and animation, and
 Resolve-style colour tools — built in Rust (Tauri 2, wgpu) with a React/TypeScript UI.
 
-> **Status:** VEYRA Beta (0.9.0-beta). See [docs/STATUS.md](docs/STATUS.md) for exactly what is
+> **Status:** Directory Beta (0.9.0-beta). See [docs/STATUS.md](docs/STATUS.md) for exactly what is
 > implemented and tested, and [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md).
 
 ## Highlights
@@ -27,8 +27,8 @@ Resolve-style colour tools — built in Rust (Tauri 2, wgpu) with a React/TypeSc
 ## Install
 
 Run `VEYRA_0.9.0_x64-setup.exe` (per-user install, no admin needed) or unzip the portable
-build and run `VEYRA.exe`. Windows 10/11 x64 with the Edge WebView2 runtime (preinstalled on
-current Windows). A DirectX 12 or Vulkan GPU is recommended; VEYRA falls back to software
+build and run `Directory.exe`. Windows 10/11 x64 with the Edge WebView2 runtime (preinstalled on
+current Windows). A DirectX 12 or Vulkan GPU is recommended; Directory falls back to software
 rendering (WARP) when none is available.
 
 ## Build from source
@@ -68,6 +68,6 @@ Outputs land in `release/` (NSIS installer, MSI, portable ZIP).
 
 ## Licence
 
-VEYRA source: GPL-3.0-or-later. The bundled FFmpeg build is GPL (see
+Directory source: GPL-3.0-or-later. The bundled FFmpeg build is GPL (see
 `src-tauri/resources/ffmpeg/LICENSE-FFmpeg.txt`); its source is available from ffmpeg.org and
 the build's provenance is described in `README-FFmpeg-build.txt`.

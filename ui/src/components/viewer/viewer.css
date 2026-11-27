@@ -40,7 +40,7 @@
 .ov-anchor { cursor: move; }
 .ov-anchor circle { fill: none; stroke: var(--accent-hi); stroke-width: 1.25; }
 .ov-anchor line { stroke: var(--accent-hi); stroke-width: 1; }
-.ov-mask { fill: rgba(242, 141, 150, 0.04); stroke: #e7b46a; stroke-width: 1; cursor: pointer; }
+.ov-mask { fill: rgba(255, 255, 255, 0.04); stroke: #e7b46a; stroke-width: 1; cursor: pointer; }
 .ov-mask.on { stroke: var(--accent-hi); stroke-width: 1.5; }
 .ov-vtx { fill: var(--bg-0); stroke: var(--accent-hi); stroke-width: 1.25; cursor: move; }
 .ov-vtx.on { fill: var(--accent); }

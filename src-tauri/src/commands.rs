@@ -565,7 +565,7 @@ pub fn create_layer(comp: Composition, req: LayerReq) -> R<Layer> {
     let v = req.variant.as_deref().unwrap_or("");
     Ok(match req.kind.as_str() {
         "media" => factory::media_layer(&comp, req.asset.as_ref().ok_or("asset required")?, req.start),
-        "solid" => factory::solid_layer(&comp, req.color.unwrap_or([0.949, 0.553, 0.588, 1.0]), req.start),
+        "solid" => factory::solid_layer(&comp, req.color.unwrap_or([1.0, 1.0, 1.0, 1.0]), req.start),
         "text" => factory::text_layer(&comp, req.text.as_deref().unwrap_or("Your Text"), req.start),
         "shape" => factory::shape_layer(&comp, if v.is_empty() { "rect" } else { v }, req.start),
         "null" => factory::null_layer(&comp, req.start),
@@ -614,7 +614,7 @@ pub fn create_mask(kind: String, width: f64, height: f64) -> Mask {
 
 #[tauri::command]
 pub fn create_shape_item(kind: String, size: f64) -> ShapeItem {
-    factory::shape_item(factory::geometry(&kind, size), &kind, [0.949, 0.553, 0.588, 1.0])
+    factory::shape_item(factory::geometry(&kind, size), &kind, [1.0, 1.0, 1.0, 1.0])
 }
 
 #[tauri::command]
@@ -1197,4 +1197,29 @@ pub fn list_luts(state: State<'_, AppState>) -> Vec<String> {
         }
     }
     out
+}
+
+// ---------------------------------------------------------------- per-project workspace layout
+
+fn layout_file(project_path: &str) -> R<PathBuf> {
+    let p = Path::new(project_path);
+    let dir = p.parent().ok_or_else(|| "project has no folder".to_string())?;
+    Ok(dir.join("layout.json"))
+}
+
+/// The workspace layout saved next to a project (`<project folder>/layout.json`), if any.
+#[tauri::command]
+pub fn read_project_layout(project_path: String) -> R<Option<String>> {
+    let f = layout_file(&project_path)?;
+    Ok(std::fs::read_to_string(f).ok())
+}
+
+/// Save the workspace layout for a project. Layouts never leak between projects.
+#[tauri::command]
+pub fn write_project_layout(project_path: String, json: String) -> R<()> {
+    serde_json::from_str::<serde_json::Value>(&json).map_err(|e| e.to_string())?;
+    let f = layout_file(&project_path)?;
+    let tmp = f.with_extension("json.tmp");
+    std::fs::write(&tmp, json).map_err(|e| e.to_string())?;
+    std::fs::rename(&tmp, &f).map_err(|e| e.to_string())
 }

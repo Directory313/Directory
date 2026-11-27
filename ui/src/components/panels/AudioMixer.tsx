@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useComp, useEditor, draftComp } from '../../store/editor';
+import { NONE } from '../../store/editor';
 import { api } from '../../lib/api';
 import { propAt } from '../../lib/anim';
 import { setProp } from '../../lib/ops';
@@ -58,7 +59,7 @@ function Strip({ layer }: { layer: Layer }) {
 
 export function AudioMixer() {
   const comp = useComp();
-  const assets = useEditor((s) => s.project?.assets ?? []);
+  const assets = useEditor((s) => s.project?.assets ?? NONE);
   const layers = (comp?.layers ?? []).filter((l) => 'asset' in l.kind && assets.find((a) => a.id === (l.kind as { asset: string }).asset)?.info.hasAudio);
   return (
     <div className="panel">

@@ -24,14 +24,15 @@ if ($LASTEXITCODE -ne 0) { throw 'tauri build failed' }
 
 # Portable build: the release exe plus its resources, runnable without installing.
 $out = Join-Path $root 'release'
-$portable = Join-Path $out 'VEYRA-Beta-portable'
+$portable = Join-Path $out 'Directory-Beta-portable'
 Remove-Item -Recurse -Force $portable -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force "$portable\ffmpeg", "$portable\blender" | Out-Null
-Copy-Item 'target\release\veyra.exe' "$portable\VEYRA.exe"
+$exe = if (Test-Path 'target\release\Directory.exe') { 'target\release\Directory.exe' } else { 'target\release\veyra.exe' }
+Copy-Item $exe "$portable\Directory.exe"
 Copy-Item 'src-tauri\resources\ffmpeg\*' "$portable\ffmpeg\"
 Copy-Item 'src-tauri\resources\blender\*' "$portable\blender\"
 Copy-Item 'README.md', 'docs\USER_GUIDE.md', 'docs\KNOWN_LIMITATIONS.md' $portable -ErrorAction SilentlyContinue
-Set-Content "$portable\PORTABLE.txt" "VEYRA Beta portable build. Requires the Microsoft Edge WebView2 runtime (preinstalled on Windows 10/11). Run VEYRA.exe." -Encoding utf8
-Compress-Archive -Path "$portable\*" -DestinationPath (Join-Path $out 'VEYRA-Beta-portable.zip') -Force
+Set-Content "$portable\PORTABLE.txt" "Directory Beta portable build. Requires the Microsoft Edge WebView2 runtime (preinstalled on Windows 10/11). Run Directory.exe." -Encoding utf8
+Compress-Archive -Path "$portable\*" -DestinationPath (Join-Path $out 'Directory-Beta-portable.zip') -Force
 Get-ChildItem 'target\release\bundle' -Recurse -Include *.exe, *.msi | Copy-Item -Destination $out
 Get-ChildItem $out | Select-Object Name, @{ n = 'MB'; e = { [math]::Round($_.Length / 1MB, 1) } }

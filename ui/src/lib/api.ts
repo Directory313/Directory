@@ -59,6 +59,9 @@ export const api = {
   syncProject: (project: Project) => call<number>('sync_project', { project }),
   openProject: (path: string) => call<Opened>('open_project', { path }),
   saveProject: (project: Project, path: string) => call<string>('save_project', { project, path }),
+  /** Per-project workspace layout, stored as layout.json in the project folder. */
+  readProjectLayout: (projectPath: string) => call<string | null>('read_project_layout', { projectPath }),
+  writeProjectLayout: (projectPath: string, json: string) => call<void>('write_project_layout', { projectPath, json }),
   autosave: (project: Project) => call<string>('autosave', { project }),
   listRecovery: () => call<Recovery[]>('list_recovery'),
   recoverProject: (autosavePath: string) => call<Opened>('recover_project', { autosavePath }),

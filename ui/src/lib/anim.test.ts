@@ -36,3 +36,24 @@ describe('keyframe evaluation (mirror of the Rust engine)', () => {
     expect(parseTime('2.5s', 30)).toBe(2.5);
   });
 });
+
+describe('easing curves (no extra keyframes)', () => {
+  it('elastic and bounce start at 0, end at 1, overshoot/bounce in between', async () => {
+    const { elasticOut, bounceOut, EASINGS, sampleEasing } = await import('./anim');
+    expect(elasticOut(0)).toBe(0); expect(elasticOut(1)).toBe(1);
+    expect(Math.max(...Array.from({ length: 100 }, (_, i) => elasticOut(i / 100)))).toBeGreaterThan(1.05);
+    expect(bounceOut(0)).toBe(0); expect(bounceOut(1)).toBeCloseTo(1, 6);
+    const back = sampleEasing(EASINGS.find((e) => e.id === 'backOut')!);
+    expect(Math.max(...back)).toBeGreaterThan(1.05);
+    expect(back[0]).toBeCloseTo(0, 6); expect(back[back.length - 1]).toBeCloseTo(1, 6);
+  });
+  it('applying an easing changes only the segment, never the key count', async () => {
+    const { applyEasing, EASINGS, evalKeys } = await import('./anim');
+    const keys = [{ t: 0, v: 0 }, { t: 1, v: 100 }] as { t: number; v: number; interp?: never }[];
+    const before = evalKeys(keys, 0, 0.3);
+    applyEasing(EASINGS.find((e) => e.id === 'bounceOut')!, keys[0] as never, keys[1] as never);
+    expect(keys.length).toBe(2);
+    expect(evalKeys(keys, 0, 0.3)).not.toBeCloseTo(before, 3);
+    expect(evalKeys(keys, 0, 1)).toBe(100);
+  });
+});

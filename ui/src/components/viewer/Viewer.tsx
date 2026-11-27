@@ -52,6 +52,9 @@ registerActions([
 ]);
 
 const RULER = 18;
+/** How long after the last edit the preview stays in fast draft mode. */
+const INTERACT_MS = 220;
+const lastEditAt = () => S().lastEditTime;
 
 export function Viewer() {
   const comp = useComp();
@@ -81,6 +84,7 @@ export function Viewer() {
   const [guides, setGuidesState] = useState<Guide[]>([]);
   const [, force] = useState(0);
   const busy = useRef(false);
+  const refineTimer = useRef<number | undefined>(undefined);
   const pending = useRef(false);
 
   useEffect(() => { const off = onAdaptiveChange(() => force((x) => x + 1)); return () => { off(); }; }, []);
@@ -117,8 +121,13 @@ export function Viewer() {
         if (!c || !isTauri) break;
         await s.ensureSynced();
         const st = S();
-        const scale = Math.max(0.05, st.previewScale * (st.playing ? adaptiveFactor : 1));
-        const f = await api.renderFrame(c.id, st.time, scale, st.draft);
+        // While a value is being dragged/typed, render a light draft for instant feedback,
+        // then refresh at the chosen quality once editing pauses.
+        const interacting = !st.playing && performance.now() - lastEditAt() < INTERACT_MS;
+        const base = st.previewScale * (st.playing ? adaptiveFactor : 1);
+        const scale = Math.max(0.05, interacting ? Math.min(base, 0.25) : base);
+        const f = await api.renderFrame(c.id, st.time, scale, st.draft || interacting);
+        if (interacting) { window.clearTimeout(refineTimer.current); refineTimer.current = window.setTimeout(() => void request(), INTERACT_MS + 30); }
         const cv = canvasRef.current;
         if (cv) {
           if (cv.width !== f.width || cv.height !== f.height) { cv.width = f.width; cv.height = f.height; }
@@ -231,7 +240,7 @@ export function Viewer() {
           </div>
           <Overlay comp={comp} view={{ left, top, z }} onPan={pan} guides={guides} setGuides={setGuides} trackPts={trackPts} setTrackPts={setTrackPts} />
           {vflags.rulers && <Rulers z={z} left={left} top={top} w={size.w} h={size.h} onAddGuide={(g) => setGuides([...guides, g])} />}
-          {!isTauri && <div className="vw-note">Preview renders in the VEYRA desktop app.</div>}
+          {!isTauri && <div className="vw-note">Preview renders in the Directory desktop app.</div>}
           {error && <div className="vw-error" title={error}><AlertTriangle size={13} /> {error.slice(0, 160)}</div>}
           {(tool === 'track' || trackPts.length > 0) && <TrackPanel comp={comp} points={trackPts} setPoints={setTrackPts} onClose={() => { setTrackPts([]); S().set({ tool: 'select' }); }} />}
         </div>

@@ -1,4 +1,4 @@
-# Known Limitations — VEYRA Beta
+# Known Limitations — Directory Beta
 
 These are real gaps, not hidden behind placeholder controls. Items are grouped by area.
 
@@ -16,7 +16,7 @@ These are real gaps, not hidden behind placeholder controls. Items are grouped b
 * **ACES / OpenColorIO and HDR output.** Colour spaces are tagged on export; compositing is
   display-referred (gamma-space) as in After Effects' default mode.
 * **Audio scrubbing**, live audio metering from the output bus, multichannel beyond stereo.
-* **Cloud features** (accounts, sync). VEYRA is fully local by design.
+* **Cloud features** (accounts, sync). Directory is fully local by design.
 * **Additional UI languages** (English only).
 
 ## Partial

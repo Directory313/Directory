@@ -1,5 +1,6 @@
 // Application-level actions: file, edit, layer creation, windows. Registered at module load.
 import { open, save, ask } from '@tauri-apps/plugin-dialog';
+import { documentDir } from '@tauri-apps/api/path';
 import { registerActions } from '../../lib/actions';
 import { api } from '../../lib/api';
 import { addLayer, copyLayers, deleteLayers, duplicateLayers, pasteLayers, precompose, selectAllLayers, splitAtPlayhead, moveLayers } from '../../lib/ops';
@@ -22,7 +23,7 @@ export const MEDIA_FILTERS = [
 
 export async function openProjectPath(path: string) {
   const s = S();
-  if (s.dirty && !(await ask('Discard unsaved changes to the current project?', { title: 'VEYRA', kind: 'warning' }))) return;
+  if (s.dirty && !(await ask('Discard unsaved changes to the current project?', { title: 'Directory', kind: 'warning' }))) return;
   try {
     const r = await api.openProject(path);
     S().loadProject(r.project, r.path);
@@ -33,19 +34,36 @@ export async function openProjectPath(path: string) {
   }
 }
 
+/**
+ * Every project lives in its own folder: "X\Name.directory" becomes "X\Name\Name.directory"
+ * (unless the chosen folder is already named after the project). The folder holds the
+ * project file, its layout.json and its Backups.
+ */
+export function projectFolderPath(picked: string): string {
+  const parts = picked.split(/[\\/]/);
+  let file = parts.pop()!;
+  if (!/\.(directory|veyra)$/i.test(file)) file += '.directory';
+  const stem = file.replace(/\.(directory|veyra)$/i, '');
+  const parent = parts[parts.length - 1] ?? '';
+  if (parent.toLowerCase() === stem.toLowerCase()) return [...parts, file].join('\\');
+  return [...parts, stem, file].join('\\');
+}
+
 export async function saveProject(saveAs = false) {
   const s = S();
   if (!s.project) return;
   let path = s.projectPath;
   if (!path || saveAs) {
-    const picked = await save({ title: 'Save VEYRA project', defaultPath: `${s.project.name}.veyra`, filters: [{ name: 'VEYRA Project', extensions: ['veyra'] }] });
+    let base = '';
+    try { base = `${await documentDir()}\\Directory Projects\\`; } catch { /* dialog default */ }
+    const picked = await save({ title: 'Save Directory project (a project folder is created for it)', defaultPath: `${base}${s.project.name}.directory`, filters: [{ name: 'Directory Project', extensions: ['directory', 'veyra'] }] });
     if (!picked) return;
-    path = picked;
+    path = projectFolderPath(picked);
   }
   useEditor.setState({ saveState: 'saving' });
   try {
     await api.saveProject(s.project, path);
-    const name = path.split(/[\\/]/).pop()!.replace(/\.veyra$/i, '');
+    const name = path.split(/[\\/]/).pop()!.replace(/\.(directory|veyra)$/i, '');
     useEditor.setState({ projectPath: path, dirty: false, saveState: 'saved', lastSaved: Date.now() });
     if (S().project && S().project!.name !== name && saveAs) S().edit('Rename Project', (d) => { d.name = name; });
     S().toast('success', 'Project saved');
@@ -125,8 +143,8 @@ async function collectFiles() {
 }
 
 registerActions([
-  { id: 'file.home', label: 'Go to Home Screen', group: 'File', run: async () => { if (S().dirty && !(await ask('Leave this project? Unsaved changes are kept in autosave.', { title: 'VEYRA' }))) return; S().set({ screen: 'home', playing: false }); } },
-  { id: 'file.open', label: 'Open Project…', group: 'File', shortcut: 'Ctrl+O', run: async () => { const p = await open({ filters: [{ name: 'VEYRA Project', extensions: ['veyra'] }] }); if (p && !Array.isArray(p)) await openProjectPath(p); } },
+  { id: 'file.home', label: 'Go to Home Screen', group: 'File', run: async () => { if (S().dirty && !(await ask('Leave this project? Unsaved changes are kept in autosave.', { title: 'Directory' }))) return; S().set({ screen: 'home', playing: false }); } },
+  { id: 'file.open', label: 'Open Project…', group: 'File', shortcut: 'Ctrl+O', run: async () => { const p = await open({ filters: [{ name: 'Directory Project', extensions: ['directory', 'veyra'] }] }); if (p && !Array.isArray(p)) await openProjectPath(p); } },
   { id: 'file.save', label: 'Save Project', group: 'File', shortcut: 'Ctrl+S', run: () => saveProject(false), enabled: hasProject },
   { id: 'file.saveAs', label: 'Save Project As…', group: 'File', shortcut: 'Ctrl+Shift+S', run: () => saveProject(true), enabled: hasProject },
   { id: 'file.import', label: 'Import Media…', group: 'File', shortcut: 'Ctrl+I', run: () => importDialog(false) },

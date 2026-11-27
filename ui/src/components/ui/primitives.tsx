@@ -1,6 +1,7 @@
 // Shared UI primitives used by every panel. Keep these small and consistent.
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { evalArithmetic } from '../../lib/mathexpr';
 import { ChevronDown, ChevronRight, Diamond, Search as SearchIcon, X } from 'lucide-react';
 import type { Color } from '../../types/project';
 
@@ -26,13 +27,13 @@ export function NumberField({ value, onChange, onCommit, step = 1, min, max, pre
   }
   function commitText() {
     setEditing(false);
-    // Allow simple arithmetic like "100+20" or "*2".
-    try {
-      const src = text.trim().replace(/^([*/+-])/, `${value}$1`);
-      if (!/^[\d\s.+\-*/()e]+$/i.test(src)) return;
-      const v = Function(`"use strict";return (${src})`)() as number;
-      if (Number.isFinite(v)) { onChange(clamp(v)); onCommit?.(); }
-    } catch { /* ignore invalid input */ }
+    // Simple arithmetic like "100+20"; a leading * / or + applies to the current value
+    // ("*2", "+10"); a leading "-" is a negative number. Parsed safely: eval/Function is
+    // blocked by the app's Content Security Policy, which previously made every typed
+    // value silently fail in the installed app.
+    const t = text.trim().replace(',', '.');
+    const v = evalArithmetic(/^[*/+]/.test(t) ? `${value}${t}` : t);
+    if (v != null) { onChange(clamp(v)); onCommit?.(); }
   }
   return (
     <span
@@ -151,12 +152,18 @@ export function ColorPicker({ value, onChange, alpha = true }: { value: Color; o
         style={{ appearance: 'none', height: 10, borderRadius: 5, background: 'linear-gradient(90deg,red,#ff0,lime,cyan,blue,#f0f,red)' }} />
       {alpha && <div className="row"><span className="label" style={{ width: 40 }}>Alpha</span><Slider value={value[3]} min={0} max={1} onChange={(a) => onChange([value[0], value[1], value[2], a])} width={150} /></div>}
       <div className="row">
-        <input className="input mono grow" value={hexText} onChange={(e) => setHexText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && /^#?[0-9a-f]{6}$/i.test(hexText)) { const c = hexToColor(hexText, value[3]); setHsv(rgbToHsv(c[0], c[1], c[2])); onChange(c); } e.stopPropagation(); }} />
+        <input className="input mono grow" value={hexText} spellCheck={false}
+          onChange={(e) => {
+            // Apply as soon as a complete hex code is typed (no Enter needed).
+            setHexText(e.target.value);
+            const t = e.target.value.trim();
+            if (/^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.test(t)) { const c = hexToColor(t, value[3]); setHsv(rgbToHsv(c[0], c[1], c[2])); onChange(c); }
+          }}
+          onKeyDown={(e) => e.stopPropagation()} />
         <span className="swatch" style={{ width: 28, height: 22 }}><i style={{ background: colorCss(value) }} /></span>
       </div>
       <div className="row" style={{ flexWrap: 'wrap', gap: 4 }}>
-        {['#101010', '#f4f4f4', '#f28d96', '#eaa4aa', '#ffc0c5', '#e7b46a', '#8fbf9a', '#7fb2e5', '#b29be0', '#000000', '#ffffff'].map((h) => (
+        {['#101010', '#f4f4f4', '#ff0000', '#00ff00', '#0000ff', '#f28d96', '#eaa4aa', '#ffc0c5', '#e7b46a', '#8fbf9a', '#7fb2e5', '#b29be0', '#000000', '#ffffff'].map((h) => (
           <span key={h} className="swatch" style={{ width: 16, height: 16 }} onClick={() => { const c = hexToColor(h, value[3]); setHsv(rgbToHsv(c[0], c[1], c[2])); onChange(c); }}><i style={{ background: h }} /></span>
         ))}
       </div>

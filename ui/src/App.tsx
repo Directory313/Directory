@@ -48,7 +48,7 @@ export function App() {
     document.documentElement.style.setProperty('--ui-scale', String(settings.uiScale || 1));
     document.documentElement.dataset.reducedMotion = String(settings.reducedMotion);
     const a = Math.max(0.4, Math.min(1, settings.accentIntensity || 1));
-    document.documentElement.style.setProperty('--accent', `color-mix(in srgb, #f28d96 ${a * 100}%, #8a8a8a)`);
+    document.documentElement.style.setProperty('--accent', `color-mix(in srgb, #ffffff ${a * 100}%, #8a8a8a)`);
   }, [settings]);
 
   // Global keyboard shortcuts.

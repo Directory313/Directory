@@ -2,7 +2,7 @@
 import type { Draft } from 'immer';
 import type { Keyframe, Layer, Prop, TextAnimator, Vec3 } from '../../types/project';
 import { draftComp, newLocalId, useEditor } from '../../store/editor';
-import { EASE_IN_HANDLE, EASE_OUT_HANDLE, propAt } from '../../lib/anim';
+import { EASE_IN_HANDLE, EASE_OUT_HANDLE, EASINGS, applyEasing, propAt } from '../../lib/anim';
 
 type L = Draft<Layer>;
 const kf = <T,>(t: number, v: T, interp: Keyframe<T>['interp'] = 'bezier', outH = EASE_OUT_HANDLE, inH = EASE_IN_HANDLE): Keyframe<T> => ({ t, v, interp, outH, inH });
@@ -11,6 +11,13 @@ function put<T>(p: Prop<T>, keys: Keyframe<T>[]) {
   p.keys = [...(p.keys ?? []).filter((k) => k.t < t0 - 1e-4 || k.t > t1 + 1e-4), ...keys].sort((a, b) => a.t - b.t);
 }
 const D = 0.6;
+/** Two keyframes with the named easing curve between them (no extra keys). */
+function move<T>(p: Prop<T>, t0: number, v0: T, t1: number, v1: T, easing: string) {
+  const a = kf(t0, v0), b = kf(t1, v1);
+  const e = EASINGS.find((x) => x.id === easing);
+  if (e) applyEasing(e, a as Keyframe<unknown>, b as Keyframe<unknown>);
+  put(p, [a, b]);
+}
 
 export interface AnimPreset { id: string; name: string; group: string; apply: (l: L, t: number) => void; textOnly?: boolean }
 
@@ -25,24 +32,14 @@ export const ANIM_PRESETS: AnimPreset[] = [
   { id: 'fadeIn', name: 'Fade In', group: 'Basic', apply: (l, t) => put(l.transform.opacity, [kf(t, 0), kf(t + D, 100)]) },
   { id: 'fadeOut', name: 'Fade Out', group: 'Basic', apply: (l, t) => { const o = propAt(l.transform.opacity as Prop<number>, t); put(l.transform.opacity, [kf(t, o), kf(t + D, 0)]); } },
   { id: 'smooth', name: 'Smooth Move In', group: 'Basic', apply: (l, t) => { const p = propAt(l.transform.position as Prop<Vec3>, t); put(l.transform.position, [kf<Vec3>(t, [p[0] - 300, p[1], p[2]], 'bezier', { x: 0.2, y: 0 }, { x: 0.2, y: 1 }), kf<Vec3>(t + 0.8, p)]); } },
-  { id: 'scalePop', name: 'Scale Pop', group: 'Basic', apply: (l, t) => { const s = propAt(l.transform.scale as Prop<Vec3>, t); put(l.transform.scale, [kf<Vec3>(t, [0, 0, s[2]]), kf<Vec3>(t + 0.25, [s[0] * 1.12, s[1] * 1.12, s[2]]), kf<Vec3>(t + 0.4, s)]); } },
+  { id: 'scalePop', name: 'Scale Pop', group: 'Basic', apply: (l, t) => { const s = propAt(l.transform.scale as Prop<Vec3>, t); move<Vec3>(l.transform.scale, t, [0, 0, s[2]], t + 0.45, s, 'backOut'); } },
   { id: 'rotate', name: 'Rotation (360°)', group: 'Basic', apply: (l, t) => { const r = propAt(l.transform.rotation as Prop<Vec3>, t); put(l.transform.rotation, [kf<Vec3>(t, r), kf<Vec3>(t + 1.2, [r[0], r[1], r[2] + 360])]); } },
-  { id: 'bounce', name: 'Bounce In', group: 'Physics', apply: (l, t) => {
-    const p = propAt(l.transform.position as Prop<Vec3>, t);
-    const y = (h: number) => [p[0], p[1] - h, p[2]] as Vec3;
-    put(l.transform.position, [kf(t, y(420), 'bezier', { x: 0.5, y: 0 }, { x: 0.9, y: 1 }), kf(t + 0.45, y(0), 'bezier', { x: 0.1, y: 0 }, { x: 0.5, y: 1 }), kf(t + 0.65, y(90), 'bezier', { x: 0.5, y: 0 }, { x: 0.9, y: 1 }), kf(t + 0.85, y(0), 'bezier', { x: 0.1, y: 0 }, { x: 0.5, y: 1 }), kf(t + 0.95, y(22), 'bezier', { x: 0.5, y: 0 }, { x: 0.9, y: 1 }), kf(t + 1.05, y(0))]);
-  } },
-  { id: 'elastic', name: 'Elastic Scale', group: 'Physics', apply: (l, t) => {
-    const s = propAt(l.transform.scale as Prop<Vec3>, t);
-    const k = (f: number) => [s[0] * f, s[1] * f, s[2]] as Vec3;
-    put(l.transform.scale, [kf(t, k(0)), kf(t + 0.18, k(1.25)), kf(t + 0.32, k(0.88)), kf(t + 0.46, k(1.06)), kf(t + 0.6, k(0.98)), kf(t + 0.72, k(1))]);
-  } },
-  { id: 'overshoot', name: 'Overshoot Slide', group: 'Physics', apply: (l, t) => { const p = propAt(l.transform.position as Prop<Vec3>, t); put(l.transform.position, [kf<Vec3>(t, [p[0] + 500, p[1], p[2]], 'bezier', { x: 0.3, y: 0 }, { x: 0.6, y: 1.25 }), kf<Vec3>(t + 0.7, p)]); } },
-  { id: 'spring', name: 'Spring Rotation', group: 'Physics', apply: (l, t) => {
-    const r = propAt(l.transform.rotation as Prop<Vec3>, t);
-    const k = (d: number) => [r[0], r[1], r[2] + d] as Vec3;
-    put(l.transform.rotation, [kf(t, k(-35)), kf(t + 0.15, k(22)), kf(t + 0.3, k(-12)), kf(t + 0.45, k(6)), kf(t + 0.6, k(-2)), kf(t + 0.75, k(0))]);
-  } },
+  // Physics presets use two keyframes and a curve (bounce / elastic / overshoot) between them.
+  // Adjust the feel afterwards in the Graph Editor or with the Easing list.
+  { id: 'bounce', name: 'Bounce In', group: 'Physics', apply: (l, t) => { const p = propAt(l.transform.position as Prop<Vec3>, t); move<Vec3>(l.transform.position, t, [p[0], p[1] - 420, p[2]], t + 1.0, p, 'bounceOut'); } },
+  { id: 'elastic', name: 'Elastic Scale', group: 'Physics', apply: (l, t) => { const s = propAt(l.transform.scale as Prop<Vec3>, t); move<Vec3>(l.transform.scale, t, [0, 0, s[2]], t + 0.9, s, 'elasticOut'); } },
+  { id: 'overshoot', name: 'Overshoot Slide', group: 'Physics', apply: (l, t) => { const p = propAt(l.transform.position as Prop<Vec3>, t); move<Vec3>(l.transform.position, t, [p[0] + 500, p[1], p[2]], t + 0.7, p, 'backOut'); } },
+  { id: 'spring', name: 'Spring Rotation', group: 'Physics', apply: (l, t) => { const r = propAt(l.transform.rotation as Prop<Vec3>, t); move<Vec3>(l.transform.rotation, t, [r[0], r[1], r[2] - 35], t + 0.9, r, 'elasticOut'); } },
   { id: 'shake', name: 'Shake', group: 'Procedural', apply: (l) => { l.transform.position.expr = 'wiggle(14, 18)'; } },
   { id: 'wiggle', name: 'Wiggle (gentle)', group: 'Procedural', apply: (l) => { l.transform.position.expr = 'wiggle(1.5, 25)'; } },
   { id: 'float', name: 'Floating', group: 'Procedural', apply: (l) => { l.transform.position.expr = 'value + [0, sin(time * 2) * 14, 0]'; l.transform.rotation.expr = 'value + [0, 0, sin(time * 1.3) * 2]'; } },

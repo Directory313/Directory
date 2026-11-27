@@ -23,7 +23,7 @@ export async function importPaths(paths: string[], target: string | null) {
   const s = useEditor.getState();
   if (!paths.length) return;
   const lower = paths.map((p) => p.toLowerCase());
-  if (lower.length === 1 && lower[0].endsWith('.veyra')) {
+  if (lower.length === 1 && (lower[0].endsWith('.directory') || lower[0].endsWith('.veyra'))) {
     const { openProjectPath } = await import('./coreActions');
     return openProjectPath(paths[0]);
   }

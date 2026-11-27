@@ -1,6 +1,6 @@
 # Export Format Reference
 
-All encoders ship with VEYRA (bundled FFmpeg 9.1 full build). "HW" = hardware encoder used
+All encoders ship with Directory (bundled FFmpeg 9.1 full build). "HW" = hardware encoder used
 when available and enabled (NVIDIA NVENC, Intel Quick Sync, AMD AMF); otherwise software.
 
 | Codec | Containers | Alpha | Bit depth | Encoder | Notes |

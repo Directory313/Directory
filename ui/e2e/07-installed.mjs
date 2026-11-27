@@ -2,6 +2,7 @@
 const MEDIA = process.env.VEYRA_TEST_MEDIA;
 const OUT = process.env.VEYRA_TEST_OUT;
 export default async function ({ page, shot, invoke }) {
+  await page.reload();
   await page.waitForSelector('.home', { timeout: 20000 });
   const info = await invoke('app_info');
   console.log('gpu:', info.gpu, info.gpuBackend, '| ffmpeg:', info.ffmpeg.ffmpegPath);

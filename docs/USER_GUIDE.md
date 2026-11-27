@@ -1,12 +1,12 @@
-# VEYRA Beta — User Guide
+# Directory Beta — User Guide
 
 ## 1. Start editing in under a minute
 
-1. Open VEYRA. The home screen shows **New project**, **Recent** projects and system status.
+1. Open Directory. The home screen shows **New project**, **Recent** projects and system status.
 2. Drag one or more video files from Windows File Explorer anywhere onto the window.
-   VEYRA creates a project that matches the first clip's resolution and frame rate and
+   Directory creates a project that matches the first clip's resolution and frame rate and
    places the clips on the timeline one after another. No codecs or encoders need to be
-   installed — the media engine ships inside VEYRA.
+   installed — the media engine ships inside Directory.
 3. Press **Space** to play. Drag a clip edge to trim, press **S** to split at the playhead.
 4. Click the **T** tool in the viewer and click on the image to add text.
 5. Open **Library → Effects** and click an effect to apply it to the selected clip.
@@ -137,7 +137,7 @@ cylinder, cone, torus, plane, pyramid, circle, grid) and imported glTF/GLB/OBJ m
 PBR material (base colour/texture, metallic, roughness, specular, emission). Text and shapes
 can be extruded into real 3D geometry.
 
-**Blender**: import a .blend file and VEYRA runs your installed Blender in the background to
+**Blender**: import a .blend file and Directory runs your installed Blender in the background to
 convert the scene to glTF (geometry, materials, hierarchy, cameras, lights). Anything that
 cannot be transferred is listed in a report.
 
@@ -162,5 +162,5 @@ read back and verified (size, duration, audio, and alpha when requested).
 
 **Transparent video**: make the composition background transparent (or simply leave areas
 empty with Transparent on) and use ProRes 4444/4444 XQ, WebM VP9 with alpha, PNG/TIFF/EXR
-sequences, FFV1, QuickTime Animation or PNG-in-MOV. VEYRA refuses alpha for codecs that
+sequences, FFV1, QuickTime Animation or PNG-in-MOV. Directory refuses alpha for codecs that
 cannot store it and warns when a transparent composition is exported without alpha.
