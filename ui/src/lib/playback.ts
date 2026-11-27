@@ -1,7 +1,7 @@
 // Playback engine: drives store.time from the audio clock (when the comp has audio) or the
 // wall clock, loops over the work area, and tracks achieved preview fps / dropped frames.
 import { activeComp, useEditor } from '../store/editor';
-import { api, fileSrc, isTauri } from './api';
+import { api, fileSrc, isTauri, on } from './api';
 import { registerActions } from './actions';
 import type { Composition, Project } from '../types/project';
 
@@ -19,6 +19,7 @@ let shown = 0;
 let statStart = 0;
 let statTime0 = 0;
 let lowSince = 0;
+let highSince = 0;
 /** Multiplier applied to the preview scale while playback cannot keep up (1 = off). */
 export let adaptiveFactor = 1;
 const adaptiveListeners = new Set<() => void>();
@@ -116,8 +117,10 @@ export async function play(from?: number) {
   if (t >= b - 1 / c.fps || t < a) t = a;
   s.setTime(t);
   usingAudio = await prepareAudio(c);
+  previewPending = false; // playing stops a Render Preview in progress
   useEditor.setState({ playing: true, droppedFrames: 0, playbackFps: 0 });
   lowSince = 0;
+  highSince = 0;
   restartClock(t);
   if (!raf) raf = requestAnimationFrame(tick);
 }
@@ -147,11 +150,20 @@ export function frameShown() {
   const dropped = Math.max(0, Math.round(expected - shown));
   useEditor.setState({ playbackFps: Math.round(fps * 10) / 10, droppedFrames: dropped });
   if (s.settings?.adaptivePreview !== false) {
+    // Like CapCut's preview quality: drop the resolution while playback lags, and raise it
+    // again once playback has been comfortably at full speed for a few seconds.
     const now = performance.now();
     if (fps < c.fps * 0.6) {
+      highSince = 0;
       if (!lowSince) lowSince = now;
       else if (now - lowSince > 900 && adaptiveFactor > 0.25) { setAdaptive(adaptiveFactor / 2); lowSince = now; }
-    } else lowSince = 0;
+    } else {
+      lowSince = 0;
+      if (adaptiveFactor < 1 && fps >= c.fps * 0.95) {
+        if (!highSince) highSince = now;
+        else if (now - highSince > 3000) { setAdaptive(Math.min(1, adaptiveFactor * 2)); highSince = now; }
+      } else highSince = 0;
+    }
   }
   if (el > 3) { statStart = performance.now(); statTime0 = s.time; shown = 0; }
 }
@@ -172,7 +184,37 @@ export function goTo(where: 'start' | 'end') {
   S().setTime(t);
 }
 
+// ---------------------------------------------------------------- Render Preview (Enter)
+// On-demand pre-render of the work area into the preview memory, like Premiere's
+// "Render In to Out". Nothing is written to disk unless the disk cache is turned on.
+let previewPending = false;
+
+async function renderPreview() {
+  const s = S();
+  const c = activeComp();
+  if (!c || !isTauri) return;
+  if (s.playing) pause();
+  await s.ensureSynced();
+  const [a, b] = workArea(c);
+  previewPending = true;
+  s.toast('info', 'Rendering preview…', 'The work area is being rendered for smooth playback. Press Space to play.');
+  await api.prerender(c.id, a, b, S().previewScale).catch((e) => { previewPending = false; s.toast('error', 'Render preview failed', String(e)); });
+}
+
+if (isTauri) {
+  void on<{ compId: string; done?: boolean; rendered?: number; limited?: boolean }>('cache-progress', (p) => {
+    if (!p.done || !previewPending) return;
+    previewPending = false;
+    const c = S().project?.compositions.find((x) => x.id === p.compId);
+    const n = p.rendered ?? 0;
+    if (p.limited) {
+      S().toast('warning', `Preview rendered for the first ${c ? (n / c.fps).toFixed(1) : n} s`, 'The preview memory is full. Shorten the work area, lower the preview resolution, or raise Preview memory in Settings → Performance.');
+    } else S().toast('success', 'Preview rendered', `${n} frames ready for smooth playback.`);
+  });
+}
+
 registerActions([
+  { id: 'playback.renderPreview', label: 'Render Preview (Work Area)', group: 'Playback', shortcut: 'Enter', run: () => void renderPreview(), enabled: () => !!S().project && document.activeElement?.tagName !== 'BUTTON' },
   { id: 'playback.toggle', label: 'Play / Pause', group: 'Playback', shortcut: 'Space', run: toggle, enabled: () => !!S().project },
   { id: 'playback.fromStart', label: 'Play from Work Area Start', group: 'Playback', shortcut: 'Shift+Space', run: () => { const c = activeComp(); if (c) void play(workArea(c)[0]); } },
   { id: 'playback.toStart', label: 'Go to Start', group: 'Playback', shortcut: 'Ctrl+ArrowLeft', run: () => goTo('start') },

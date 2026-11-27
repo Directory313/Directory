@@ -23,6 +23,9 @@ export interface Settings {
   lutFolders: string[]; favoriteEffects: string[]; thumbnails: boolean; waveforms: boolean;
   /** Update version the user chose to skip; empty when none. */
   skippedUpdate: string;
+  /** Also keep rendered frames on disk (size: diskCacheMb). Off by default. */
+  diskCache: boolean;
+  settingsVersion: number;
 }
 
 export interface ExportSettings {

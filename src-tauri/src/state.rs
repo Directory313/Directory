@@ -58,6 +58,28 @@ pub struct Settings {
     pub waveforms: bool,
     /// Update version the user chose to skip ("Skip this version"); empty when none.
     pub skipped_update: String,
+    /// Keep rendered frames on disk as well as in RAM (size: `disk_cache_mb`). Off by default.
+    pub disk_cache: bool,
+    /// Bumped when defaults change in a way existing settings files must pick up
+    /// (see `migrate_settings` in lib.rs). Missing in old files, so it reads as 0.
+    pub settings_version: u32,
+}
+
+/// Current `Settings::settings_version`.
+pub const SETTINGS_VERSION: u32 = 2;
+
+/// Free space the disk cache always leaves on the drive.
+pub const DISK_CACHE_MIN_FREE: u64 = 5 * 1024 * 1024 * 1024;
+
+impl Settings {
+    /// Disk tier for the frame cache: folder and byte budget, or None when it is off.
+    pub fn disk_cache_tier(&self, default_dir: &std::path::Path) -> Option<(PathBuf, u64)> {
+        if !self.disk_cache || self.disk_cache_mb == 0 {
+            return None;
+        }
+        let dir = if self.cache_dir.is_empty() { default_dir.join("frames") } else { PathBuf::from(&self.cache_dir).join("frames") };
+        Some((dir, self.disk_cache_mb * 1024 * 1024))
+    }
 }
 
 impl Default for Settings {
@@ -72,9 +94,9 @@ impl Default for Settings {
             autosave_minutes: 2.0,
             backups_kept: 10,
             ram_cache_mb: 1024,
-            disk_cache_mb: 4096,
+            disk_cache_mb: 2048,
             cache_dir: String::new(),
-            background_render: true,
+            background_render: false,
             preview_scale: 0.5,
             adaptive_preview: true,
             prefer_responsiveness: true,
@@ -105,6 +127,8 @@ impl Default for Settings {
             thumbnails: true,
             waveforms: true,
             skipped_update: String::new(),
+            disk_cache: false,
+            settings_version: 0,
         }
     }
 }

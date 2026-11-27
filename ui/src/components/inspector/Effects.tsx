@@ -1,7 +1,7 @@
 // Effect stack: registry-driven parameter editors, curves, colour wheels, presets, reordering.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Draft } from 'immer';
-import { ChevronDown, ChevronRight, ClipboardPaste, Copy, CopyPlus, FolderOpen, GripVertical, Plus, RotateCcw, Save, Star, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, ClipboardPaste, Copy, CopyPlus, FolderOpen, GripVertical, Palette, Plus, RotateCcw, Save, Star, Trash2 } from 'lucide-react';
 import type { Effect, EffectDef, Layer, ParamDef, ParamValue } from '../../types/project';
 import { getPath, newLocalId, useEditor } from '../../store/editor';
 import { NONE } from '../../store/editor';
@@ -58,6 +58,9 @@ export function EffectsList({ layer, audio = false }: { layer: Layer; audio?: bo
       ))}
       <div className="row fx-actions">
         <button className="btn sm" onClick={(e) => setAdding(e.currentTarget)}><Plus size={12} /> Add {audio ? 'Audio ' : ''}Effect</button>
+        {!audio && !list.some((e) => e.kind === 'colorGrade') && (
+          <button className="btn sm" title="Colour wheels, exposure, contrast, saturation, temperature and curves" onClick={() => void add('colorGrade')}><Palette size={12} /> Color Grade</button>
+        )}
         {!audio && clip?.length ? (
           <button className="btn sm ghost" title="Paste effects" onClick={() => mutate('Paste Effects', (arr) => { for (const e of clip) arr.push({ ...JSON.parse(JSON.stringify(e)), id: newLocalId() }); })}>
             <ClipboardPaste size={12} /> Paste {clip.length}

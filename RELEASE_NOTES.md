@@ -1,2 +1,6 @@
-- Directory now updates itself: when a new version is out, a pop-up offers to install it (Update now, Not now or Skip this version). Your projects and settings are kept.
-- Edit → Check for Updates… looks for a new version at any time.
+- Previews no longer fill your drive. The preview now renders live as it plays and keeps frames in memory only; nothing is saved to disk while you edit.
+- Background pre-rendering is off by default (Settings → Performance).
+- The disk cache is now an option, off by default. When on it has a size limit, never takes the drive below 5 GB free, and is deleted when Directory closes.
+- Render Preview (Enter, or Composition → Render Preview) renders the work area ahead for smooth playback, in memory.
+- Preview quality now goes back up by itself once playback catches up.
+- Color Grade is now one click away: a Color Grade button next to Add Effect, and the Colour Grading workspace shows Effects first.

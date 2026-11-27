@@ -100,7 +100,7 @@ function CompSettings({ comp }: { comp: Composition }) {
         <PlainRow label="Sample Rate"><Select value={comp.sampleRate} onChange={(v) => set('Sample Rate', (c) => { c.sampleRate = v; })} options={[44100, 48000, 96000].map((r) => ({ value: r, label: `${r / 1000} kHz` }))} /></PlainRow>
         <PlainRow label="Channels"><Select value={comp.channels} onChange={(v) => set('Channels', (c) => { c.channels = v; })} options={[{ value: 1, label: 'Mono' }, { value: 2, label: 'Stereo' }]} /></PlainRow>
       </Section>
-      <div className="muted hint" style={{ padding: 10 }}>Playhead {formatTime(time, comp.fps)} · {comp.layers.length} layers. Select a layer to edit its properties.</div>
+      <div className="muted hint" style={{ padding: 10 }}>Playhead {formatTime(time, comp.fps)} · {comp.layers.length} layers. Select a clip in the timeline to edit its properties or colour grade it.</div>
     </>
   );
 }
@@ -112,8 +112,12 @@ function LayerInspector({ layer, comp }: { layer: Layer; comp: Composition }) {
   const visual = !['audio', 'camera', 'light', 'null'].includes(k);
   const project = useEditor((s) => s.project);
   const hasAudio = (k === 'media' || k === 'audio') && !!project?.assets.find((a) => a.id === (layer.kind as { asset: string }).asset)?.info.hasAudio;
+  // In the Colour Grading workspace the effect stack (where the Color Grade wheels live) comes first.
+  const grading = useEditor((s) => s.workspace === 'Colour Grading');
+  const effects = visual && <Section title={`Effects${layer.effects.length ? ` (${layer.effects.length})` : ''}`} id="insp-fx"><EffectsList layer={layer} /></Section>;
   return (
     <>
+      {grading && effects}
       <LayerSection layer={layer} comp={comp} />
       <TimingSection layer={layer} />
       {k !== 'audio' && <TransformSection layers={[layer]} />}
@@ -126,7 +130,7 @@ function LayerInspector({ layer, comp }: { layer: Layer; comp: Composition }) {
       {(k === 'mesh' || (layer.is3d && (k === 'text' || k === 'shape'))) && <MaterialSection layer={layer} />}
       {k === 'particles' && <ParticlesSection layer={layer} />}
       {k === 'generator' && <GeneratorSection layer={layer} />}
-      {visual && <Section title={`Effects${layer.effects.length ? ` (${layer.effects.length})` : ''}`} id="insp-fx"><EffectsList layer={layer} /></Section>}
+      {!grading && effects}
       {visual && k !== 'mesh' && <Section title={`Masks${layer.masks.length ? ` (${layer.masks.length})` : ''}`} id="insp-masks" defaultOpen={layer.masks.length > 0}><MasksSection layer={layer} /></Section>}
       {(hasAudio || k === 'comp') && <AudioSection layer={layer} />}
       {visual && <TransitionsSection layer={layer} />}

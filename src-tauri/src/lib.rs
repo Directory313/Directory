@@ -31,17 +31,20 @@ pub fn run() {
             let lock = data.join("session.lock");
             let crashed = lock.exists();
             let _ = std::fs::write(&lock, std::process::id().to_string());
-            let settings: Settings = std::fs::read_to_string(data.join("settings.json")).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
+            let mut settings: Settings = std::fs::read_to_string(data.join("settings.json")).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
+            let migrated = migrate_settings(&mut settings);
             veyra_media::decode::HW_DECODE.store(settings.hardware_decode, std::sync::atomic::Ordering::Relaxed);
             if settings.cpu_threads > 0 {
                 let _ = rayon::ThreadPoolBuilder::new().num_threads(settings.cpu_threads).build_global();
             }
+            // Rendered frames live in RAM; the disk tier is only used when turned on in Settings.
+            // Either way, frames left on disk by an earlier session (stale keys) are deleted.
             let frame_cache = Arc::new(veyra_render::cache::FrameCache::new(settings.ram_cache_mb as usize * 1024 * 1024));
-            let disk_dir = if settings.cache_dir.is_empty() { cache.join("frames") } else { std::path::PathBuf::from(&settings.cache_dir).join("frames") };
-            frame_cache.configure(settings.ram_cache_mb as usize * 1024 * 1024, Some(disk_dir.clone()), settings.disk_cache_mb * 1024 * 1024);
-            // Frames cached on disk by an earlier session use stale keys; start clean.
-            let _ = std::fs::remove_dir_all(&disk_dir);
-            let _ = std::fs::create_dir_all(&disk_dir);
+            frame_cache.set_free_space_guard(DISK_CACHE_MIN_FREE, sys::free_bytes);
+            let default_frames = if settings.cache_dir.is_empty() { cache.join("frames") } else { std::path::PathBuf::from(&settings.cache_dir).join("frames") };
+            let _ = std::fs::remove_dir_all(&default_frames);
+            let tier = settings.disk_cache_tier(&cache);
+            frame_cache.configure(settings.ram_cache_mb as usize * 1024 * 1024, tier.as_ref().map(|t| t.0.clone()), tier.map_or(0, |t| t.1));
             let st = AppState {
                 project: RwLock::new(veyra_core::model::Project::new("Untitled")),
                 revision: AtomicU64::new(1),
@@ -58,6 +61,9 @@ pub fn run() {
                 prerender_gen: AtomicU64::new(0),
             };
             app.manage(st);
+            if migrated {
+                app.state::<AppState>().save_settings();
+            }
             // Warm up the GPU and media capability probe off the UI thread.
             let handle = app.handle().clone();
             std::thread::spawn(move || {
@@ -74,6 +80,7 @@ pub fn run() {
                 let s = window.state::<AppState>();
                 let _ = std::fs::remove_file(s.dirs.data.join("session.lock"));
                 s.decoders.clear();
+                s.cache.shutdown(); // never leave rendered frames on disk after closing
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -147,6 +154,24 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running VEYRA");
+}
+
+/// Applies changed defaults to settings saved by older versions. Returns true when anything
+/// changed (the caller saves the file).
+fn migrate_settings(s: &mut Settings) -> bool {
+    if s.settings_version >= SETTINGS_VERSION {
+        return false;
+    }
+    if s.settings_version < 2 {
+        // 0.9.3: previews render live in RAM. Background pre-rendering and the disk cache
+        // filled the drive (4 GB cache rewritten after every edit), so both are now opt-in.
+        s.background_render = false;
+        s.disk_cache = false;
+        s.disk_cache_mb = s.disk_cache_mb.clamp(512, 2048);
+        s.ram_cache_mb = s.ram_cache_mb.min(1024);
+    }
+    s.settings_version = SETTINGS_VERSION;
+    true
 }
 
 /// The app was renamed from VEYRA to Directory (new app identifier). On first launch, copy

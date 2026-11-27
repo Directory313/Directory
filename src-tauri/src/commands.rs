@@ -85,9 +85,13 @@ pub fn get_settings(state: State<'_, AppState>) -> Settings {
 #[tauri::command]
 pub fn set_settings(state: State<'_, AppState>, settings: Settings) -> R<()> {
     let ram = settings.ram_cache_mb.clamp(64, 1 << 20) as usize * 1024 * 1024;
-    let disk = settings.disk_cache_mb * 1024 * 1024;
-    let dir = if settings.cache_dir.is_empty() { state.dirs.cache.join("frames") } else { PathBuf::from(&settings.cache_dir).join("frames") };
-    state.cache.configure(ram, (disk > 0).then_some(dir), disk);
+    let mut settings = settings;
+    settings.settings_version = crate::state::SETTINGS_VERSION;
+    let (old_tier, new_tier) = (state.settings.read().disk_cache_tier(&state.dirs.cache), settings.disk_cache_tier(&state.dirs.cache));
+    // Reconfiguring wipes the disk tier, so only do it when the cache settings changed.
+    if old_tier != new_tier || state.settings.read().ram_cache_mb != settings.ram_cache_mb {
+        state.cache.configure(ram, new_tier.as_ref().map(|t| t.0.clone()), new_tier.map_or(0, |t| t.1));
+    }
     veyra_media::decode::HW_DECODE.store(settings.hardware_decode, Ordering::Relaxed);
     state.decoders.clear(); // restart decoders with the new decode mode
     *state.settings.write() = settings;
@@ -133,6 +137,7 @@ pub fn prepare_for_update(app: AppHandle) -> R<()> {
     let s = st(&app);
     let _ = std::fs::remove_file(s.dirs.data.join("session.lock"));
     s.decoders.clear();
+    s.cache.shutdown();
     Ok(())
 }
 
@@ -719,8 +724,11 @@ pub async fn render_frame(app: AppHandle, comp_id: String, time: f64, scale: f64
     .await
 }
 
-/// Background pre-render of a time range into the frame cache. A newer request cancels an
-/// older one. Emits `cache-progress` { compId, frames: [cached frame indices] }.
+/// Pre-render a time range into the frame cache (background pre-rendering and the Render
+/// Preview command). A newer request cancels an older one. Stops once the frames rendered fill
+/// what the cache can hold, since rendering more would only push out the first ones.
+/// Emits `cache-progress` { compId, frames: [cached frame indices] }; the last event also has
+/// `done: true`, `rendered` (frames) and `limited` (stopped early because the cache was full).
 #[tauri::command]
 pub async fn prerender(app: AppHandle, comp_id: String, start: f64, end: f64, scale: f64) -> R<()> {
     let gen = st(&app).prerender_gen.fetch_add(1, Ordering::SeqCst) + 1;
@@ -734,21 +742,28 @@ pub async fn prerender(app: AppHandle, comp_id: String, start: f64, end: f64, sc
             }
         };
         let (f0, f1) = ((start.max(0.0) * fps).floor() as u64, (end.min(dur) * fps).ceil() as u64);
+        // Leave a tenth of the cache for frames the viewer needs while this runs.
+        let room = s.cache.capacity() / 10 * 9;
+        let (mut used, mut rendered, mut limited) = (0u64, 0u64, false);
         let mut batch = vec![];
         for f in f0..f1 {
             if s.prerender_gen.load(Ordering::SeqCst) != gen {
                 return;
             }
             let t = f as f64 / fps;
-            if render_cached(&s, &comp_id, t, scale, false).is_err() {
-                break;
-            }
+            let Ok(img) = render_cached(&s, &comp_id, t, scale, false) else { break };
+            used += img.data.len() as u64;
+            rendered += 1;
             batch.push(f);
             if batch.len() >= 8 {
                 let _ = app.emit("cache-progress", json!({ "compId": comp_id, "frames": std::mem::take(&mut batch) }));
             }
+            if used + img.data.len() as u64 > room {
+                limited = f + 1 < f1;
+                break;
+            }
         }
-        let _ = app.emit("cache-progress", json!({ "compId": comp_id, "frames": batch, "done": true }));
+        let _ = app.emit("cache-progress", json!({ "compId": comp_id, "frames": batch, "done": true, "rendered": rendered, "limited": limited }));
     });
     Ok(())
 }

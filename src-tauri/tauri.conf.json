@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Directory",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "mainBinaryName": "Directory",
   "identifier": "studio.directory.editor",
   "build": {

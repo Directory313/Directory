@@ -87,6 +87,7 @@ export function EditorShell() {
   const projectId = useEditor((s) => s.project?.id);
   const projectPath = useEditor((s) => s.projectPath);
   const [wsName, setWsName] = useState(DEFAULT_WS);
+  useEffect(() => { useEditor.setState({ workspace: wsName }); }, [wsName]);
   const [model, setModel] = useState(() => presetModel(DEFAULT_WS));
   currentModel = model;
 

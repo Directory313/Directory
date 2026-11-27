@@ -44,6 +44,22 @@ pub fn memory_and_disk(path: &Path) -> (f64, f64) {
     }
 }
 
+/// Free bytes on the drive holding `path` (the frame cache's low-space guard).
+pub fn free_bytes(path: &Path) -> Option<u64> {
+    #[cfg(windows)]
+    unsafe {
+        use std::os::windows::ffi::OsStrExt;
+        let root: Vec<u16> = path.ancestors().last().unwrap_or(path).as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+        let (mut free, mut total, mut tfree) = (0u64, 0u64, 0u64);
+        (win::GetDiskFreeSpaceExW(root.as_ptr(), &mut free, &mut total, &mut tfree) != 0).then_some(free)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = path;
+        None
+    }
+}
+
 pub fn find_blender(configured: &str) -> Option<String> {
     if !configured.is_empty() && Path::new(configured).is_file() {
         return Some(configured.to_string());

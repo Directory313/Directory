@@ -53,6 +53,8 @@ export interface EditorState {
   appInfo: AppInfo | null;
   toasts: Toast[];
   dialog: Dialog;
+  /** Name of the workspace layout currently shown (e.g. 'Colour Grading'). */
+  workspace: string;
   thumbs: Record<string, string>;
   cached: Record<string, number[]>;
   jobs: ExportJob[];
@@ -115,6 +117,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   appInfo: null,
   toasts: [],
   dialog: null,
+  workspace: '',
   thumbs: {},
   cached: {},
   jobs: [],
