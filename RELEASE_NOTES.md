@@ -1,9 +1,7 @@
-- Fixed: after drawing a mask you couldn't drag the clip in the viewer. Clicking inside a mask now moves the clip; click the mask's outline to edit the mask.
-- Snapping in the viewer: clips snap to the frame's centre and edges and to other clips, with pink guide lines. Toggle with the magnet button (Ctrl+;) or hold Ctrl while dragging to move freely.
-- Align tools: select a clip and an align bar appears at the top of the viewer (left, centre, right, top, middle, bottom; distribute with 3+ clips). Also in Layer → Align and the right-click menu. Ctrl+Alt+Home centres in the frame.
-- Right-click on empty space anywhere for a menu with every tool: add layers, import, paste, align, snapping, render preview, export, workspaces and panels.
-- Drag effects, text, shapes and other Library items onto the timeline or viewer. Drop an effect on a clip to apply it to that clip.
-- "Auto" render toggle on the timeline next to Render preview, so you don't have to open Settings.
-- Save your own panel layout: Window → Save Workspace As… Move panels by dragging their tab title.
-- Render Queue button next to Export.
-- Faster previews: frames no longer copy the whole project before rendering.
+- New: Online asset browser (Library → Online). Search or paste a link from Pixabay, Pexels, Sketchfab, Poly Haven or Openverse, then drag results straight onto the timeline: Directory downloads and imports them. Poly Haven and Openverse work right away; Pixabay and Pexels need a free key (the panel shows how). Credits are added to the project.
+- Fixed: dragging didn't work anywhere in the app. You can now drag panels by their tab to rearrange the layout, drag media and Library items onto the timeline or viewer, reorder effects and parent layers in the Hierarchy.
+- New: Alt+Z opens a pie menu of workspaces around the mouse.
+- Align tools are easier to find: an Align button in the viewer toolbar and an Align row in the Inspector's Transform section.
+- Camera field of view can now be set in degrees and keyframed.
+- Check for updates and Settings are now on the home screen. Directory also re-checks for updates while it's open and retries if the internet wasn't ready at start-up.
+- Fixed: the Compositing workspace could fail to load.

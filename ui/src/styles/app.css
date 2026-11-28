@@ -68,6 +68,10 @@
 .home-link { display: flex; align-items: center; gap: 10px; background: none; border: none; color: var(--text-2); padding: 9px 10px; border-radius: var(--r-sm); cursor: pointer; text-align: left; }
 .home-link:hover { background: var(--bg-3); color: var(--text-1); }
 .home-sys { margin-top: auto; display: flex; flex-direction: column; gap: 3px; font-size: var(--fs-sm); }
+.home-link:disabled { opacity: 0.45; cursor: default; }
+.home-update-err, .home-update-new { margin-top: 6px; background: none; border: none; padding: 0; text-align: left; cursor: pointer; font-size: var(--fs-sm); }
+.home-update-err { color: var(--warn); }
+.home-update-new { color: var(--accent-hi); font-weight: 600; }
 .home-main { padding: 40px 48px; overflow: auto; display: flex; flex-direction: column; gap: 20px; max-width: 1040px; }
 .home-card { background: var(--bg-2); border: 1px solid var(--border-soft); border-radius: var(--r-lg); padding: 20px 22px; }
 .home-card h2 { margin: 0 0 14px; font-size: var(--fs-lg); font-weight: 600; display: flex; align-items: center; gap: 8px; }
@@ -178,3 +182,51 @@ body.dragging-files .home-drop-hint { opacity: 1; }
 .shortcut-row:hover { background: var(--bg-3); }
 .shortcut-row .kbd { cursor: pointer; min-width: 90px; text-align: center; padding: 3px 8px; }
 .shortcut-row .kbd.capturing { border-color: var(--accent); color: var(--accent-hi); }
+
+/* In-app drags (lib/pointerDrag): a label that follows the pointer. */
+.drag-ghost { position: fixed; left: 0; top: 0; z-index: 10000; pointer-events: none; max-width: 240px; padding: 4px 9px; border-radius: var(--r-sm); background: var(--bg-3); border: 1px solid var(--border); color: var(--text-2); font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-2); opacity: 0.85; }
+.drag-ghost.ok { border-color: var(--accent); color: var(--text-1); opacity: 1; }
+body.dragging-items, body.dragging-items * { cursor: grabbing !important; user-select: none; }
+
+/* Alt+Z workspace pie menu */
+.pie-root { position: fixed; inset: 0; z-index: 9000; background: rgba(0, 0, 0, 0.18); }
+.pie-svg { position: absolute; pointer-events: none; overflow: visible; }
+.pie-center { fill: var(--bg-2); stroke: var(--border); stroke-width: 1.5; }
+.pie-ray { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+.pie-item { position: absolute; transform: translate(-50%, -50%); padding: 7px 14px; border-radius: 999px; background: var(--bg-3); border: 1px solid var(--border); color: var(--text-2); font-size: var(--fs-md); white-space: nowrap; box-shadow: var(--shadow-2); pointer-events: none; transition: background 80ms, color 80ms; }
+.pie-item.current { border-color: var(--text-3); }
+.pie-item.hot { background: var(--accent); color: var(--bg-0); border-color: var(--accent); font-weight: 600; }
+.pie-title { position: absolute; transform: translateX(-50%); color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; pointer-events: none; }
+
+/* Library → Online */
+.online { display: flex; flex-direction: column; min-height: 100%; }
+.online-bar { position: sticky; top: 0; z-index: 2; background: var(--bg-2); padding: 4px 0 6px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid var(--border-soft); }
+.online-search { display: flex; align-items: center; gap: 5px; }
+.online-search .input { flex: 1; min-width: 0; }
+.online-filters { gap: 5px; flex-wrap: wrap; }
+.online-filters select.input { height: 24px; font-size: var(--fs-sm); }
+.online-body { padding-top: 6px; }
+.online-hint { display: flex; gap: 8px; align-items: flex-start; padding: 8px; margin: 2px 0 6px; border-radius: var(--r-sm); background: var(--bg-3); color: var(--text-2); font-size: var(--fs-sm); line-height: 1.45; }
+.online-hint svg { flex-shrink: 0; margin-top: 2px; }
+.online-source { display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: var(--r-sm); font-size: var(--fs-sm); }
+.online-source:hover { background: var(--bg-3); }
+.online-error { padding: 8px; margin-bottom: 6px; border-radius: var(--r-sm); background: rgba(228, 100, 108, 0.12); color: var(--error); font-size: var(--fs-sm); white-space: pre-wrap; }
+.online-empty, .online-note { padding: 10px 6px; font-size: var(--fs-sm); }
+.online-key { padding: 10px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg-3); font-size: var(--fs-sm); display: flex; flex-direction: column; gap: 6px; }
+.online-key ol { margin: 0; padding-left: 18px; color: var(--text-2); line-height: 1.45; }
+.online-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.online-card { border-radius: var(--r-md); background: var(--bg-3); border: 1px solid var(--border-soft); overflow: hidden; cursor: grab; display: flex; flex-direction: column; }
+.online-card:hover { border-color: var(--border); }
+.online-card.paid { opacity: 0.8; cursor: default; }
+.online-thumb { position: relative; aspect-ratio: 16 / 10; background: var(--bg-1); display: flex; align-items: center; justify-content: center; }
+.online-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.online-badge { position: absolute; left: 5px; top: 5px; padding: 1px 6px; border-radius: 999px; font-size: 10px; background: rgba(0, 0, 0, 0.65); color: #fff; }
+.online-badge.paid { color: var(--warn); }
+.online-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(0, 0, 0, 0.5); }
+.online-progress > div { height: 100%; background: var(--accent); }
+.online-title { display: flex; align-items: center; gap: 4px; padding: 5px 7px 0; font-size: var(--fs-sm); color: var(--text-1); min-width: 0; }
+.online-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.online-meta { padding: 1px 7px; font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.online-actions { display: flex; align-items: center; gap: 3px; padding: 4px 5px 6px; }
+.online-more { margin: 10px auto 0; display: block; }
+.online-badge.nc { color: var(--warn); }

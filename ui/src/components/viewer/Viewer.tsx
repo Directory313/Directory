@@ -12,7 +12,7 @@ import { api, isTauri } from '../../lib/api';
 import { formatTime } from '../../lib/anim';
 import { registerActions } from '../../lib/actions';
 import { adaptiveFactor, frameShown, goTo, onAdaptiveChange, step, toggle } from '../../lib/playback';
-import { Select } from '../ui/primitives';
+import { contextMenu, Select } from '../ui/primitives';
 import { Overlay, nudge, type Guide, type TrackPoint } from './Overlay';
 import { TrackPanel } from './TrackPanel';
 import './viewer.css';
@@ -226,6 +226,16 @@ export function Viewer() {
         <button className={`icon-btn ${vflags.grid ? 'active' : ''}`} title="Grid" onClick={() => S().set({ viewer: { ...vflags, grid: !vflags.grid } })}><Box size={14} /></button>
         <button className={`icon-btn ${vflags.safe ? 'active' : ''}`} title="Action & title safe areas" onClick={() => S().set({ viewer: { ...vflags, safe: !vflags.safe } })}><SquareDashed size={14} /></button>
         <button className={`icon-btn ${vflags.rulers ? 'active' : ''}`} title="Rulers & guides (drag from a ruler to add a guide)" onClick={() => S().set({ viewer: { ...vflags, rulers: !vflags.rulers } })}><Ruler size={14} /></button>
+        <button className="btn sm ghost" disabled={!selCount} title={selCount ? 'Align the selected layers' : 'Select a layer to align it'}
+          onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); contextMenu({ clientX: r.left, clientY: r.bottom + 2 }, [
+            ...([['left', 'Left'], ['hcenter', 'Horizontal Centre'], ['right', 'Right'], ['top', 'Top'], ['vcenter', 'Vertical Centre'], ['bottom', 'Bottom']] as const).map(([m, label]) => ({ label: `Align ${label}`, action: () => alignSelected(m) })),
+            { label: 'Centre in Frame', action: () => { alignSelected('hcenter'); alignSelected('vcenter'); } },
+            { separator: true },
+            { label: 'Distribute Horizontally', disabled: selCount < 3, action: () => distributeSelected('x') },
+            { label: 'Distribute Vertically', disabled: selCount < 3, action: () => distributeSelected('y') },
+          ]); }}>
+          <AlignCenterVertical size={13} /> Align
+        </button>
         <button className={`icon-btn ${vflags.snap ? 'active' : ''}`} title="Snapping (Ctrl+;): snap to the frame's centre and edges and to other layers while dragging. Hold Ctrl to move freely." onClick={() => S().set({ viewer: { ...vflags, snap: !vflags.snap } })}><Magnet size={14} /></button>
       </div>
 

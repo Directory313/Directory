@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { FileVideo, FolderOpen, History, LifeBuoy, Plus, Upload } from 'lucide-react';
+import { FileVideo, FolderOpen, History, LifeBuoy, Plus, RefreshCw, Settings, Upload } from 'lucide-react';
+import { checkForUpdates, useUpdater } from '../../lib/updater';
+import { Dialogs } from '../dialogs/Dialogs';
 import { api, isTauri, type Recovery } from '../../lib/api';
 import { useEditor } from '../../store/editor';
 import { Logo } from './Logo';
@@ -24,6 +26,8 @@ export const FPS_PRESETS = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60, 120];
 export function HomeScreen() {
   const settings = useEditor((s) => s.settings);
   const info = useEditor((s) => s.appInfo);
+  const lastCheck = useUpdater((s) => s.lastCheck);
+  const pending = lastCheck?.ok && lastCheck.message.startsWith('Version') ? lastCheck.message.split(' ')[1] : null;
   const [recent, setRecent] = useState<{ path: string; name: string; exists: boolean }[]>([]);
   const [recovery, setRecovery] = useState<Recovery[]>([]);
   const [name, setName] = useState('Untitled Project');
@@ -56,6 +60,10 @@ export function HomeScreen() {
         <div className="col" style={{ gap: 4, marginTop: 28 }}>
           <button className="home-link" onClick={async () => { const p = await open({ filters: [{ name: 'Directory Project', extensions: ['directory', 'veyra'] }] }); if (p && !Array.isArray(p)) openProjectPath(p); }}><FolderOpen size={15} /> Open project…</button>
           <button className="home-link" onClick={async () => { const p = await open({ multiple: true, filters: MEDIA_FILTERS }); if (p) importPaths(Array.isArray(p) ? p : [p], 'timeline'); }}><Upload size={15} /> Start from footage…</button>
+          <button className="home-link" disabled={!isTauri} onClick={() => void checkForUpdates(true)} title={lastCheck ? `Last checked ${new Date(lastCheck.at).toLocaleTimeString()}: ${lastCheck.message}` : 'Look for a new version of Directory'}>
+            <RefreshCw size={15} /> Check for updates
+          </button>
+          <button className="home-link" onClick={() => useEditor.setState({ dialog: 'settings' })}><Settings size={15} /> Settings</button>
         </div>
         <div className="home-sys">
           <div className="label">System</div>
@@ -64,6 +72,10 @@ export function HomeScreen() {
           <div className="muted">{info?.ffmpeg ? `Media engine ${info.ffmpeg.ffmpegVersion.split(' ').slice(0, 3).join(' ')}` : ''}</div>
           {info?.ffmpeg?.hwEncoders.length ? <div className="muted">HW encode: {info.ffmpeg.hwEncoders.join(', ')}</div> : null}
           <div className="muted" style={{ marginTop: 6 }}>v{info?.version ?? '0.9.0'} · Directory Beta</div>
+          {lastCheck && !lastCheck.ok && (
+            <button className="home-update-err" onClick={() => void checkForUpdates(true)} title={lastCheck.message}>Couldn't check for updates · Retry</button>
+          )}
+          {pending && <button className="home-update-new" onClick={() => void checkForUpdates(true)}>Version {pending} is available · Install</button>}
         </div>
       </aside>
 
@@ -130,6 +142,7 @@ export function HomeScreen() {
         </section>
         <div className="home-drop-hint">Drop footage here</div>
       </main>
+      <Dialogs />
     </div>
   );
 }

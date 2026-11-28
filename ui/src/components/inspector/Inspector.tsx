@@ -1,7 +1,8 @@
 // Properties inspector: composition settings, or every editable property of the selection.
 import { useState } from 'react';
 import type { Draft } from 'immer';
-import { Box, Eye, EyeOff, Link2, Lock, Unlock, Headphones } from 'lucide-react';
+import { Box, Eye, EyeOff, Link2, Lock, Unlock, Headphones, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal } from 'lucide-react';
+import { alignSelected } from '../viewer/align';
 import type { BlendMode, ColorSpace, Composition, Layer, MatteMode, TransitionKind, Vec3 } from '../../types/project';
 import { BLEND_MODES, LABEL_COLORS, TRANSITIONS } from '../../types/project';
 import { draftComp, useComp, useEditor, useSelectedLayers } from '../../store/editor';
@@ -230,6 +231,16 @@ function TransformSection({ layers }: { layers: Layer[] }) {
         l.transform.rotation = { value: [0, 0, 0], keys: [] } as never;
         l.transform.opacity = { value: 100, keys: [] } as never;
       })}>Reset</button>}>
+      <PlainRow label="Align">
+        <div className="row" style={{ gap: 1 }}>
+          {([
+            ['left', AlignStartVertical, 'Align left'], ['hcenter', AlignCenterVertical, 'Align horizontal centre'], ['right', AlignEndVertical, 'Align right'],
+            ['top', AlignStartHorizontal, 'Align top'], ['vcenter', AlignCenterHorizontal, 'Align vertical centre'], ['bottom', AlignEndHorizontal, 'Align bottom'],
+          ] as const).map(([m, Icon, label]) => (
+            <button key={m} className="icon-btn sm" title={`${label} ${layers.length === 1 ? '(to the frame)' : '(to the selection)'}`} onClick={() => alignSelected(m)}><Icon size={13} /></button>
+          ))}
+        </div>
+      </PlainRow>
       <VecRow layers={layers} path="transform.anchor" label="Anchor Point" dims={dims} />
       <VecRow layers={layers} path="transform.position" label="Position" dims={dims} />
       <PropRow<Vec3> layers={layers} path="transform.scale" label="Scale">

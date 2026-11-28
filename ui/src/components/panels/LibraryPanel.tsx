@@ -10,11 +10,12 @@ import { TRANSITIONS, type Effect, type TransitionKind } from '../../types/proje
 import { EASINGS, sampleEasing, type Easing } from '../../lib/anim';
 import { applyEasingToSelection } from '../timeline/keyops';
 import { activeComp } from '../../store/editor';
-import { startLibraryDrag } from '../shell/dragdrop';
+import { beginPointerDrag } from '../../lib/pointerDrag';
+import { OnlinePanel } from './OnlinePanel';
 
-type Tab = 'effects' | 'transitions' | 'animation' | 'shapes' | 'text' | '3d' | 'generate' | 'templates' | 'audio';
+type Tab = 'online' | 'effects' | 'transitions' | 'animation' | 'shapes' | 'text' | '3d' | 'generate' | 'templates' | 'audio';
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'effects', label: 'Effects' }, { id: 'transitions', label: 'Transitions' }, { id: 'animation', label: 'Animate' }, { id: 'text', label: 'Text' },
+  { id: 'online', label: 'Online' }, { id: 'effects', label: 'Effects' }, { id: 'transitions', label: 'Transitions' }, { id: 'animation', label: 'Animate' }, { id: 'text', label: 'Text' },
   { id: 'shapes', label: 'Shapes' }, { id: '3d', label: '3D' }, { id: 'generate', label: 'Generate' }, { id: 'audio', label: 'Audio FX' }, { id: 'templates', label: 'Templates' },
 ];
 
@@ -103,7 +104,16 @@ export function LibraryPanel() {
 
   // Every item can be clicked or dragged onto the timeline / viewer (effects onto a specific clip).
   const item = (key: string, label: string, onClick: () => void, icon?: React.ReactNode, hint?: string, extra?: React.ReactNode, effect = false) => (
-    <button key={key} className="lib-item" onClick={onClick} draggable onDragStart={(e) => startLibraryDrag(e, onClick, effect)}
+    <button key={key} className="lib-item" onClick={onClick}
+      onPointerDown={(e) => beginPointerDrag(e, {
+        label, accepts: ['timeline', 'viewer'],
+        onDrop: (d) => {
+          // An effect dropped on a timeline clip goes on that clip.
+          const layerId = d.el?.closest<HTMLElement>('[data-layer]')?.dataset.layer;
+          if (effect && layerId) useEditor.getState().select([layerId]);
+          onClick();
+        },
+      })}
       title={`${hint ?? label}\nDrag onto the ${effect ? 'timeline (onto a clip) or viewer' : 'timeline or viewer'} to add it.`}>{icon}<span className="grow">{label}</span>{extra}</button>
   );
 
@@ -229,6 +239,7 @@ export function LibraryPanel() {
             {(['grid', 'noise', 'wave', 'gradient', 'checkerboard', 'animatedBackground'] as const).map((v) => item(v, v.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()), () => addLayer({ kind: 'generator', variant: v }, 'Add Generator'), <Waves size={13} />))}
           </div>
         )}
+        {tab === 'online' && <OnlinePanel />}
         {tab === 'templates' && (
           <div className="lib-group"><div className="lib-head">New composition from template</div>
             {TEMPLATES.map((t) => item(t.name, t.name, async () => {

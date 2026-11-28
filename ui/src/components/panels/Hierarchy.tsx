@@ -3,13 +3,14 @@ import { ChevronDown, ChevronRight, Link2Off } from 'lucide-react';
 import { useComp, useEditor } from '../../store/editor';
 import { setParent } from '../../lib/ops';
 import type { Layer } from '../../types/project';
+import { beginPointerDrag } from '../../lib/pointerDrag';
 
 /** Parent–child hierarchy: drag a layer onto another to parent it; drop on the root to unparent. */
 export function HierarchyPanel() {
   const comp = useComp();
   const sel = useEditor((s) => s.selectedLayers);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const [dragId, setDragId] = useState<string | null>(null);
+
   if (!comp) return <div className="panel"><div className="empty">No composition</div></div>;
   const kids = (id: string | null) => comp.layers.filter((l) => (l.parent ?? null) === id || (id === null && l.parent && !comp.layers.some((p) => p.id === l.parent)));
   const node = (l: Layer, depth: number): React.ReactNode => {
@@ -17,10 +18,15 @@ export function HierarchyPanel() {
     return (
       <div key={l.id}>
         <div
-          className={`tree-row ${sel.includes(l.id) ? 'sel' : ''}`} style={{ paddingLeft: 8 + depth * 14 }} draggable
-          onDragStart={(e) => { setDragId(l.id); e.dataTransfer.setData('text/plain', l.id); }}
-          onDragOver={(e) => { if (dragId && dragId !== l.id) e.preventDefault(); }}
-          onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (dragId && dragId !== l.id) setParent([dragId], l.id); setDragId(null); }}
+          className={`tree-row ${sel.includes(l.id) ? 'sel' : ''}`} style={{ paddingLeft: 8 + depth * 14 }} data-tree-id={l.id}
+          onPointerDown={(e) => beginPointerDrag(e, {
+            label: `Parent “${l.name}” to…`, accepts: ['*'],
+            onDrop: (d) => {
+              const onto = d.el?.closest<HTMLElement>('[data-tree-id]')?.dataset.treeId;
+              if (onto && onto !== l.id) setParent([l.id], onto);
+              else if (!onto && d.el?.closest('.tree-body')) setParent([l.id], null); // empty space: unparent
+            },
+          })}
           onClick={(e) => useEditor.getState().select([l.id], e.ctrlKey)}
         >
           {children.length ? (
@@ -38,9 +44,7 @@ export function HierarchyPanel() {
   return (
     <div className="panel">
       <div className="panel-head"><span className="label">Hierarchy — drag onto a layer to parent</span></div>
-      <div className="panel-body"
-        onDragOver={(e) => dragId && e.preventDefault()}
-        onDrop={(e) => { e.preventDefault(); if (dragId) setParent([dragId], null); setDragId(null); }}>
+      <div className="panel-body tree-body">
         {comp.layers.length === 0 ? <div className="empty">No layers</div> : kids(null).map((l) => node(l, 0))}
       </div>
     </div>

@@ -1,7 +1,7 @@
 {
   "name": "veyra-ui",
   "private": true,
-  "version": "0.9.4",
+  "version": "0.9.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,7 @@
     "@tauri-apps/api": "^2.5.0",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-updater": "^2.14.1",
-    "flexlayout-react": "^0.8.17",
+    "flexlayout-react": "^0.7.15",
     "immer": "^10.1.1",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",

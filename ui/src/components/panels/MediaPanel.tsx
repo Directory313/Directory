@@ -7,7 +7,7 @@ import { api, fileSrc } from '../../lib/api';
 import { addAssetLayer } from '../../lib/ops';
 import { runAction } from '../../lib/actions';
 import { contextMenu, SearchBox, Select } from '../ui/primitives';
-import { ASSET_MIME } from '../shell/dragdrop';
+import { beginPointerDrag, timelineTimeAtX } from '../../lib/pointerDrag';
 import type { Asset, AssetKind } from '../../types/project';
 
 const KIND_ICON: Record<AssetKind, typeof Clapperboard> = { video: Clapperboard, audio: Music, image: FileImage, imageSequence: ImageIcon, svg: FileImage, model3d: Box, lut: FileAudio };
@@ -95,8 +95,16 @@ const AssetTile = memo(function AssetTile({ a, selected, list }: { a: Asset; sel
     <div
       ref={ref}
       className={`asset ${list ? 'list' : ''} ${selected ? 'sel' : ''} ${a.missing ? 'missing' : ''}`}
-      draggable={!a.missing}
-      onDragStart={(e) => { e.dataTransfer.setData(ASSET_MIME, a.id); e.dataTransfer.effectAllowed = 'copy'; }}
+      onPointerDown={(e) => {
+        if (a.missing) return;
+        beginPointerDrag(e, {
+          label: a.name, accepts: ['timeline', 'viewer'],
+          onDrop: (d) => {
+            const t = d.target === 'timeline' ? timelineTimeAtX(d.x) : undefined;
+            addAssetLayer(a, t).catch((err) => useEditor.getState().toast('error', 'Could not add media', String(err)));
+          },
+        });
+      }}
       onClick={(e) => { const s = useEditor.getState(); useEditor.setState({ selectedAssets: e.ctrlKey ? (selected ? s.selectedAssets.filter((x) => x !== a.id) : [...s.selectedAssets, a.id]) : [a.id] }); }}
       onDoubleClick={() => !a.missing && addAssetLayer(a)}
       onContextMenu={(e) => contextMenu(e, assetMenu(a))}

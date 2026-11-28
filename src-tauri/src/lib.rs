@@ -1,6 +1,7 @@
 //! VEYRA desktop application (Tauri 2 shell around the Rust engines).
 
 mod commands;
+mod online;
 mod state;
 mod sys;
 mod tracking;
@@ -96,6 +97,10 @@ pub fn run() {
             commands::expression_errors,
             commands::reveal_path,
             commands::prepare_for_update,
+            online::online_search,
+            online::online_download,
+            online::open_url,
+            online::online_folder,
             commands::new_project,
             commands::new_composition,
             commands::sync_project,

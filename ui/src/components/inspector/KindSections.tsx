@@ -317,16 +317,21 @@ export function SolidSection({ layer }: { layer: Layer }) {
 export function CameraSection({ layer }: { layer: Layer }) {
   const k = layer.kind as K<'camera'>;
   const L = [layer];
-  const time = useEditor((s) => s.time);
   const compH = useEditor((s) => s.project?.compositions.find((c) => c.id === s.compId)?.height ?? 1080);
   const set = (label: string, fn: (c: Draft<K<'camera'>>) => void, co?: string) => ed(layer, label, (l) => { if (l.kind.type === 'camera') fn(l.kind); }, co);
   return (
     <Section title="Camera" id="insp-camera">
       <PlainRow label="Projection"><Select value={k.projection} onChange={(v) => set('Projection', (c) => { c.projection = v; })} options={[{ value: 'perspective', label: 'Perspective' }, { value: 'orthographic', label: 'Orthographic' }]} /></PlainRow>
       <NumRow layers={L} path="kind.zoom" label="Zoom" min={1} unit="px" />
-      <PlainRow label="Field of View">
-        <span className="muted mono">{((2 * Math.atan(compH / 2 / Math.max(1, propAt(k.zoom, time - layer.start))) * 180) / Math.PI).toFixed(1)}° vertical</span>
-      </PlainRow>
+      {/* Field of view is another way of setting Zoom, so it shares Zoom's keyframes: editing
+          either one (with the stopwatch on) keys the camera's lens. */}
+      <PropRow<number> layers={L} path="kind.zoom" label="Field of View">
+        {(z, setZ) => (
+          <NumberField value={(2 * Math.atan(compH / 2 / Math.max(1, z)) * 180) / Math.PI} min={1} max={179} step={0.5} precision={1} unit="°"
+            title="Vertical field of view (keyframes with Zoom)"
+            onChange={(deg) => setZ(compH / 2 / Math.tan((Math.min(179, Math.max(1, deg)) * Math.PI) / 360))} />
+        )}
+      </PropRow>
       <PlainRow label="Point of Interest"><Toggle on={k.usePointOfInterest} onChange={(v) => set('Point of Interest', (c) => { c.usePointOfInterest = v; })} /></PlainRow>
       {k.usePointOfInterest && <VecRow layers={L} path="kind.pointOfInterest" label="Target" dims={3} />}
       <PlainRow label="Depth of Field"><Toggle on={k.depthOfField} onChange={(v) => set('Depth of Field', (c) => { c.depthOfField = v; })} /></PlainRow>

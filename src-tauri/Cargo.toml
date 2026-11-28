@@ -30,3 +30,6 @@ base64 = "0.22"
 gltf = { version = "1", default-features = false, features = ["import", "utils", "names", "KHR_lights_punctual"] }
 env_logger = "0.11"
 tauri-plugin-updater = "2"
+# Online asset browser. Same reqwest/rustls build the updater already uses (no second TLS stack).
+reqwest = { version = "0.13", default-features = false, features = ["json", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }

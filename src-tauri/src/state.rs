@@ -63,6 +63,10 @@ pub struct Settings {
     /// Bumped when defaults change in a way existing settings files must pick up
     /// (see `migrate_settings` in lib.rs). Missing in old files, so it reads as 0.
     pub settings_version: u32,
+    /// Free API keys for the online asset browser (Library → Online). Stored only on this PC.
+    pub pixabay_key: String,
+    pub pexels_key: String,
+    pub sketchfab_token: String,
 }
 
 /// Current `Settings::settings_version`.
@@ -129,6 +133,9 @@ impl Default for Settings {
             skipped_update: String::new(),
             disk_cache: false,
             settings_version: 0,
+            pixabay_key: String::new(),
+            pexels_key: String::new(),
+            sketchfab_token: String::new(),
         }
     }
 }

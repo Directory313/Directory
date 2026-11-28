@@ -8,10 +8,11 @@ import './tlactions';
 import type { Asset, Composition, Layer, Transform, Prop } from '../../types/project';
 import { draftComp, useComp, useEditor } from '../../store/editor';
 import { NONE } from '../../store/editor';
-import { addAssetLayer, openComp, splitAtPlayhead } from '../../lib/ops';
+import { openComp, splitAtPlayhead } from '../../lib/ops';
 import { api, isTauri } from '../../lib/api';
 import { formatTime, parseTime } from '../../lib/anim';
 import { runAction } from '../../lib/actions';
+import { registerTimelineDrop } from '../../lib/pointerDrag';
 import { SearchBox, Slider } from '../ui/primitives';
 import { animatedProps, type AnimProp } from './model';
 import { useTL, tlRefs, PROP_ROW_H, RULER_H } from './tlstore';
@@ -295,16 +296,17 @@ function TimelineInner({ comp }: { comp: Composition }) {
     window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
   };
 
-  // ---- drop media from the media panel (HTML drag with asset id) onto the timeline
-  const onDrop = (e: React.DragEvent) => {
-    const id = e.dataTransfer.getData('application/x-veyra-asset');
-    if (!id) return;
-    e.preventDefault();
-    const el = scroller.current!;
-    const t = Math.max(0, (e.clientX - el.getBoundingClientRect().left + el.scrollLeft) / pps);
-    const asset = S().project?.assets.find((a) => a.id === id);
-    if (asset) addAssetLayer(asset, Math.round(t * comp.fps) / comp.fps).catch((err) => S().toast('error', 'Could not add media', String(err)));
-  };
+  // Media / library / online drags (pointer-based, see lib/pointerDrag) drop at the pointer's time.
+  useEffect(() => {
+    registerTimelineDrop((clientX) => {
+      const el = scroller.current;
+      if (!el) return S().time;
+      const t = Math.max(0, (clientX - el.getBoundingClientRect().left + el.scrollLeft) / useTL.getState().pps);
+      return Math.round(t * comp.fps) / comp.fps;
+    });
+    return () => registerTimelineDrop(null);
+  }, [comp.fps]);
+
 
   const splitLeft = (e: React.PointerEvent) => {
     const x0 = e.clientX, w0 = leftW;
@@ -339,7 +341,7 @@ function TimelineInner({ comp }: { comp: Composition }) {
         </div>
         <div className="tl-right">
           <Ruler comp={comp} />
-          <div className="tl-scroller" ref={scroller} onScroll={onScroll} onDragOver={(e) => { if (e.dataTransfer.types.includes('application/x-veyra-asset')) e.preventDefault(); }} onDrop={onDrop}>
+          <div className="tl-scroller" ref={scroller} onScroll={onScroll}>
             <div className="tl-content" style={{ width: contentW, height: rows.height + 200 }} onPointerDown={onBgDown}>
               <div className="tl-end" style={{ left: comp.duration * pps }} />
               {comp.workArea && <><div className="tl-wa-shade" style={{ left: 0, width: comp.workArea[0] * pps }} /><div className="tl-wa-shade" style={{ left: comp.workArea[1] * pps, right: 0 }} /></>}

@@ -5421,7 +5421,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "veyra"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "base64 0.22.1",
  "env_logger",
@@ -5430,6 +5430,8 @@ dependencies = [
  "log",
  "parking_lot",
  "rayon",
+ "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "tauri",
@@ -5444,7 +5446,7 @@ dependencies = [
 
 [[package]]
 name = "veyra-core"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "glam",
  "serde",
@@ -5455,7 +5457,7 @@ dependencies = [
 
 [[package]]
 name = "veyra-export"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "log",
  "parking_lot",
@@ -5469,7 +5471,7 @@ dependencies = [
 
 [[package]]
 name = "veyra-media"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "log",
  "parking_lot",
@@ -5481,7 +5483,7 @@ dependencies = [
 
 [[package]]
 name = "veyra-render"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "bytemuck",
  "cosmic-text",

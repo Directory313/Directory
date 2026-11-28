@@ -26,6 +26,8 @@ export interface Settings {
   /** Also keep rendered frames on disk (size: diskCacheMb). Off by default. */
   diskCache: boolean;
   settingsVersion: number;
+  /** Free API keys for Library → Online (stored only on this PC). */
+  pixabayKey: string; pexelsKey: string; sketchfabToken: string;
 }
 
 export interface ExportSettings {
@@ -52,6 +54,11 @@ export const api = {
   getSettings: () => call<Settings>('get_settings'),
   setSettings: (settings: Settings) => call<void>('set_settings', { settings }),
   prepareForUpdate: () => call<void>('prepare_for_update'),
+  onlineSearch: (provider: string, kind: string, query: string, page: string, freeOnly: boolean, id?: string) =>
+    call<import('./online').SearchResult>('online_search', { provider, kind, query, page, freeOnly, id: id ?? null }),
+  onlineDownload: (item: import('./online').OnlineItem) => call<string>('online_download', { item }),
+  openUrl: (url: string) => call<void>('open_url', { url }),
+  onlineFolder: () => call<string>('online_folder'),
   effects: () => call<EffectDef[]>('registry_effects'),
   exportCatalog: () => call<{ codecs: CodecInfo[]; presets: Preset[] }>('export_catalog'),
   fonts: () => call<string[]>('list_fonts'),

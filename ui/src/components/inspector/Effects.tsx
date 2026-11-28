@@ -10,6 +10,7 @@ import { paramNum, propAt } from '../../lib/anim';
 import { ColorField, NumberField, Popover, SearchBox, Select, Slider, Toggle } from '../ui/primitives';
 import { PlainRow, PropRow } from './PropRow';
 import { editLayers, writeProps } from './util';
+import { beginPointerDrag } from '../../lib/pointerDrag';
 
 const S = () => useEditor.getState();
 
@@ -43,17 +44,23 @@ export function EffectsList({ layer, audio = false }: { layer: Layer; audio?: bo
     <div className="fx-list">
       {list.length === 0 && <div className="muted fx-empty">{audio ? 'No audio effects.' : 'No effects. Add one below or drag from the Effects library.'}</div>}
       {list.map((e, i) => (
-        <div key={e.id} className={`fx-card ${dragIdx === i ? 'dragging' : ''}`}
-          onDragOver={(ev) => { if (dragIdx != null) ev.preventDefault(); }}
-          onDrop={(ev) => {
-            ev.preventDefault();
-            if (dragIdx == null || dragIdx === i) return;
-            const from = dragIdx;
-            mutate('Reorder Effects', (arr) => { const [m] = arr.splice(from, 1); arr.splice(i, 0, m); });
-            setDragIdx(null);
-          }}>
+        <div key={e.id} className={`fx-card ${dragIdx === i ? 'dragging' : ''}`} data-fx-list={`${layer.id}:${base}`} data-fx-index={i}>
           <EffectCard layer={layer} effect={e} index={i} count={list.length} base={base} def={defFor(defs, e.kind)} mutate={mutate}
-            onDragStart={() => setDragIdx(i)} onDragEnd={() => setDragIdx(null)} />
+            onGripDown={(ev) => {
+              setDragIdx(i);
+              beginPointerDrag(ev, {
+                label: `Move ${defFor(defs, e.kind)?.name ?? e.kind}`, accepts: ['*'],
+                onDrop: (d) => {
+                  setDragIdx(null);
+                  const card = d.el?.closest<HTMLElement>('[data-fx-index]');
+                  if (!card || card.dataset.fxList !== `${layer.id}:${base}`) return;
+                  const to = Number(card.dataset.fxIndex);
+                  if (to === i) return;
+                  mutate('Reorder Effects', (arr) => { const [m] = arr.splice(i, 1); arr.splice(to, 0, m); });
+                },
+              });
+              window.addEventListener('pointerup', () => setDragIdx(null), { once: true });
+            }} />
         </div>
       ))}
       <div className="row fx-actions">
@@ -114,9 +121,9 @@ function AddEffectMenu({ audio, onPick, onPreset }: { audio: boolean; onPick: (k
   );
 }
 
-function EffectCard({ layer, effect, index, count, base, def, mutate, onDragStart, onDragEnd }: {
+function EffectCard({ layer, effect, index, count, base, def, mutate, onGripDown }: {
   layer: Layer; effect: Effect; index: number; count: number; base: string; def?: EffectDef;
-  mutate: (label: string, fn: (arr: Draft<Effect>[]) => void) => void; onDragStart: () => void; onDragEnd: () => void;
+  mutate: (label: string, fn: (arr: Draft<Effect>[]) => void) => void; onGripDown: (e: React.PointerEvent) => void;
 }) {
   const [open, setOpen] = useState(true);
   const [adv, setAdv] = useState(false);
@@ -138,7 +145,7 @@ function EffectCard({ layer, effect, index, count, base, def, mutate, onDragStar
   return (
     <>
       <div className="fx-head">
-        <span className="fx-grip" draggable onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; onDragStart(); }} onDragEnd={onDragEnd} title="Drag to reorder"><GripVertical size={12} /></span>
+        <span className="fx-grip" onPointerDown={onGripDown} title="Drag to reorder"><GripVertical size={12} /></span>
         <button className="icon-btn sm" onClick={() => setOpen(!open)} aria-label={open ? 'Collapse' : 'Expand'}>{open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</button>
         <Toggle on={effect.enabled} onChange={(v) => at((arr, i) => { arr[i].enabled = v; })(v ? 'Enable Effect' : 'Disable Effect')} title="Enable / bypass" />
         <span className={`fx-name grow ${effect.enabled ? '' : 'off'}`} title={def?.description}>{name}</span>

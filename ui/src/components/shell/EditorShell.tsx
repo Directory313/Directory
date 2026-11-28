@@ -17,6 +17,7 @@ import { RenderQueuePanel } from '../panels/RenderQueue';
 import { HierarchyPanel } from '../panels/Hierarchy';
 import { Dialogs } from '../dialogs/Dialogs';
 import { useGeneralContextMenu } from './generalMenu';
+import { PieMenu } from './PieMenu';
 
 // Layouts are stored PER PROJECT (layout.json in the project folder), never globally, so
 // closing a panel in one project does not affect any other project. New and unsaved
@@ -197,6 +198,7 @@ export function EditorShell() {
       <TopBar workspace={wsName} />
       <div className="workspace">{layout}</div>
       <Dialogs />
+      <PieMenu />
     </div>
   );
 }

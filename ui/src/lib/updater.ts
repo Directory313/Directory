@@ -18,34 +18,62 @@ interface UpdaterState {
   downloaded: number;
   total: number;
   error: string;
+  /** Result of the most recent check, shown on the home screen. */
+  lastCheck: { at: number; ok: boolean; message: string } | null;
 }
 
-export const useUpdater = create<UpdaterState>(() => ({ update: null, phase: 'idle', downloaded: 0, total: 0, error: '' }));
+export const useUpdater = create<UpdaterState>(() => ({ update: null, phase: 'idle', downloaded: 0, total: 0, error: '', lastCheck: null }));
 
 let checking = false;
 
 /** Looks for a newer version. `manual` (Check for Updates…) reports "up to date" and errors, and
- *  ignores a skipped version; the automatic check at launch stays silent. */
-export async function checkForUpdates(manual = false) {
-  if (!isTauri || checking) return;
+ *  ignores a skipped version; automatic checks stay quiet and only record the result.
+ *  Returns false when the check itself failed (offline, GitHub unreachable…). */
+export async function checkForUpdates(manual = false): Promise<boolean> {
+  if (!isTauri || checking) return true;
   const phase = useUpdater.getState().phase;
-  if (phase === 'downloading' || phase === 'installing') return;
+  if (phase !== 'idle') return true; // already offering, downloading or installing an update
   const toast = useEditor.getState().toast;
   checking = true;
   try {
     const u = await check({ timeout: 20_000 });
     if (!u) {
-      if (manual) toast('success', 'Directory is up to date', `You have the latest version (${await getVersion()}).`);
-      return;
+      const v = await getVersion();
+      useUpdater.setState({ lastCheck: { at: Date.now(), ok: true, message: `Up to date (${v})` } });
+      if (manual) toast('success', 'Directory is up to date', `You have the latest version (${v}).`);
+      return true;
     }
-    if (!manual && useEditor.getState().settings?.skippedUpdate === u.version) { void u.close(); return; }
+    useUpdater.setState({ lastCheck: { at: Date.now(), ok: true, message: `Version ${u.version} available` } });
+    if (!manual && useEditor.getState().settings?.skippedUpdate === u.version) { void u.close(); return true; }
     useUpdater.setState({ update: u, phase: 'available', error: '' });
+    return true;
   } catch (e) {
+    useUpdater.setState({ lastCheck: { at: Date.now(), ok: false, message: String(e) } });
     if (manual) toast('error', "Couldn't check for updates", `Check your internet connection and try again.\n${String(e)}`);
     else console.warn('update check failed', e);
+    return false;
   } finally {
     checking = false;
   }
+}
+
+let autoStarted = false;
+
+/** Automatic checks: shortly after launch (retrying if the network isn't ready yet), then every
+ *  few hours while Directory stays open, so a release made while it's running is still offered.
+ *  Independent of the rest of start-up, so nothing else failing can stop it. */
+export function startAutoUpdateChecks() {
+  if (!isTauri || autoStarted) return;
+  autoStarted = true;
+  const RETRIES = [30_000, 120_000, 600_000];
+  const run = async (attempt: number) => {
+    // Wait (briefly) for settings so a skipped version is respected.
+    for (let i = 0; i < 20 && !useEditor.getState().settings; i++) await new Promise((r) => setTimeout(r, 250));
+    const ok = await checkForUpdates(false);
+    if (!ok && attempt < RETRIES.length) window.setTimeout(() => void run(attempt + 1), RETRIES[attempt]);
+  };
+  window.setTimeout(() => void run(0), 3000);
+  window.setInterval(() => void checkForUpdates(false), 3 * 60 * 60 * 1000);
 }
 
 /** Closes the dialog; the update is offered again at the next launch. */

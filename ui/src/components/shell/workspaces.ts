@@ -18,7 +18,7 @@ const GLOBAL: IJsonModel['global'] = {
   tabSetMinWidth: 160,
   tabSetMinHeight: 90,
   tabSetEnableMaximize: true,
-  tabEnablePopout: false,
+  tabEnableFloat: false,
   splitterSize: 4,
 };
 
@@ -40,7 +40,7 @@ export const WORKSPACES: Record<string, () => IJsonModel> = {
   ])),
   Compositing: () => model(row(100, [
     row(60, [set(18, ['media', 'library']), set(57, ['viewer']), set(25, ['inspector', 'hierarchy'])]),
-    row(40, [set(75, ['timeline', 'graph']), set(25, ['hierarchy'])]),
+    row(40, [set(75, ['timeline', 'graph']), set(25, ['scopes'])]),
   ])),
   'Colour Grading': () => model(row(100, [
     row(62, [set(60, ['viewer']), set(40, ['inspector'])]),
