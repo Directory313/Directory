@@ -7,6 +7,17 @@ import { activeComp, useEditor } from '../../store/editor';
 import type { Asset, Project } from '../../types/project';
 
 export const ASSET_MIME = 'application/x-veyra-asset';
+/** Library items (effects, text, shapes, generators…) dragged onto the timeline or viewer. */
+export const LIB_MIME = 'application/x-directory-library';
+
+/** What dropping the library item being dragged does (same as clicking it). An effect dropped
+ *  on a timeline clip is applied to that clip. */
+let libDrag: { run: () => void; effect: boolean } | null = null;
+export function startLibraryDrag(e: React.DragEvent, run: () => void, effect = false) {
+  libDrag = { run, effect };
+  e.dataTransfer.setData(LIB_MIME, '1');
+  e.dataTransfer.effectAllowed = 'copy';
+}
 
 function dropTargetAt(x: number, y: number): string | null {
   const el = document.elementFromPoint(x, y) as HTMLElement | null;
@@ -95,9 +106,28 @@ export function useOsDragDrop() {
     });
     // In-app drags (asset from the media browser onto timeline/viewer).
     const over = (e: DragEvent) => {
-      if (e.dataTransfer?.types.includes(ASSET_MIME)) { e.preventDefault(); setHighlight(dropTargetAt(e.clientX, e.clientY)); }
+      const types = e.dataTransfer?.types ?? [];
+      if (types.includes(ASSET_MIME)) { e.preventDefault(); setHighlight(dropTargetAt(e.clientX, e.clientY)); }
+      else if (types.includes(LIB_MIME)) {
+        const target = dropTargetAt(e.clientX, e.clientY);
+        if (target === 'timeline' || target === 'viewer') { e.preventDefault(); e.dataTransfer!.dropEffect = 'copy'; }
+        setHighlight(target === 'timeline' || target === 'viewer' ? target : null);
+      }
     };
     const drop = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes(LIB_MIME)) {
+        e.preventDefault();
+        setHighlight(null);
+        const d = libDrag;
+        libDrag = null;
+        const target = dropTargetAt(e.clientX, e.clientY);
+        if (!d || (target !== 'timeline' && target !== 'viewer')) return;
+        // An effect dropped on a clip goes on that clip.
+        const layerId = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest<HTMLElement>('[data-layer]')?.dataset.layer;
+        if (d.effect && layerId) useEditor.getState().select([layerId]);
+        d.run();
+        return;
+      }
       const id = e.dataTransfer?.getData(ASSET_MIME);
       setHighlight(null);
       // Panels that place assets precisely (the timeline drops at the pointer time) handle it themselves.
@@ -107,7 +137,7 @@ export function useOsDragDrop() {
       const asset = useEditor.getState().project?.assets.find((a) => a.id === id);
       if (asset && (target === 'timeline' || target === 'viewer')) addAssetLayer(asset).catch((err) => useEditor.getState().toast('error', 'Could not add clip', String(err)));
     };
-    const leave = () => setHighlight(null);
+    const leave = () => { setHighlight(null); libDrag = null; };
     window.addEventListener('dragover', over);
     window.addEventListener('drop', drop);
     window.addEventListener('dragend', leave);

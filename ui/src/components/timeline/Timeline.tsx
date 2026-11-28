@@ -11,6 +11,7 @@ import { NONE } from '../../store/editor';
 import { addAssetLayer, openComp, splitAtPlayhead } from '../../lib/ops';
 import { api, isTauri } from '../../lib/api';
 import { formatTime, parseTime } from '../../lib/anim';
+import { runAction } from '../../lib/actions';
 import { SearchBox, Slider } from '../ui/primitives';
 import { animatedProps, type AnimProp } from './model';
 import { useTL, tlRefs, PROP_ROW_H, RULER_H } from './tlstore';
@@ -439,7 +440,8 @@ function Toolbar({ comp }: { comp: Composition }) {
   const search = useTL((s) => s.search);
   const pps = useTL((s) => s.pps);
   const trackH = useTL((s) => s.trackH);
-  const scale = useEditor((s) => s.previewScale);
+  const settings = useEditor((s) => s.settings);
+  const autoRender = !!settings?.backgroundRender;
   const zoomV = Math.log(pps) / Math.log(4000);
   return (
     <div className="panel-head tl-toolbar">
@@ -453,9 +455,14 @@ function Toolbar({ comp }: { comp: Composition }) {
       <button className="icon-btn" title="Set work area start (I)" onClick={() => setWorkArea('in')}><ArrowLeftToLine size={14} /></button>
       <button className="icon-btn" title="Set work area end (O)" onClick={() => setWorkArea('out')}><ArrowRightToLine size={14} /></button>
       <button className={`icon-btn ${hideShy ? 'active' : ''}`} title="Hide shy layers" onClick={() => useTL.getState().set({ hideShy: !hideShy })}><Ghost size={14} /></button>
-      <button className="btn sm ghost" title="Pre-render the work area into the preview cache" disabled={!isTauri}
-        onClick={async () => { await S().ensureSynced(); const wa = comp.workArea ?? [0, comp.duration]; api.prerender(comp.id, wa[0], wa[1], scale).then(() => S().toast('info', 'Rendering preview in the background')); }}>
+      <button className="btn sm ghost" title="Render the work area once for smooth playback (Enter). Kept in memory only." disabled={!isTauri}
+        onClick={() => runAction('playback.renderPreview')}>
         <Zap size={12} /> Render preview
+      </button>
+      <button className={`btn sm ${autoRender ? 'primary' : 'ghost'}`} disabled={!isTauri || !settings}
+        title={autoRender ? 'Auto render is ON: after each edit, the work area is rendered ahead in memory. Click to turn off.' : 'Auto render is OFF: the preview renders live as it plays. Click to render ahead automatically after each edit (uses memory).'}
+        onClick={() => { if (!settings) return; const next = { ...settings, backgroundRender: !autoRender }; S().set({ settings: next }); void api.setSettings(next); if (autoRender) void api.stopPrerender(); }}>
+        Auto
       </button>
       <span className="grow" />
       <div style={{ width: 170 }}><SearchBox value={search} onChange={(v) => useTL.getState().set({ search: v })} placeholder="Filter layers" /></div>

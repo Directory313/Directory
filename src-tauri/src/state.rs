@@ -162,9 +162,25 @@ pub struct AppState {
     pub dirs: Dirs,
     pub crashed_last_time: bool,
     pub prerender_gen: AtomicU64,
+    /// Shared read-only copy of the project for rendering, rebuilt only when `revision` changes
+    /// (instead of cloning the whole project for every preview frame).
+    pub snapshot: Mutex<Option<(u64, Arc<Project>)>>,
 }
 
 impl AppState {
+    pub fn project_snapshot(&self) -> Arc<Project> {
+        let rev = self.revision.load(std::sync::atomic::Ordering::SeqCst);
+        let mut snap = self.snapshot.lock();
+        if let Some((r, p)) = snap.as_ref() {
+            if *r == rev {
+                return p.clone();
+            }
+        }
+        let p = Arc::new(self.project.read().clone());
+        *snap = Some((rev, p.clone()));
+        p
+    }
+
     pub fn renderer(&self) -> Result<Arc<Renderer>, String> {
         self.renderer
             .get_or_init(|| {

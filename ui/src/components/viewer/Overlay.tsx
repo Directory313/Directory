@@ -8,13 +8,14 @@ import { api } from '../../lib/api';
 import { propAt } from '../../lib/anim';
 import { writeProps, editLayers } from '../inspector/util';
 import { apply, applyLinear, contentBounds, ellipsePath, inv, layerSize, mul, parentMatrix, pathD, pick, rectPath, rotate, translate, worldMatrix, type M, type P } from './geom';
+import { snapAxis, snapTargets, unionBox, worldBox, type Box } from './align';
 
 export interface View { left: number; top: number; z: number }
 export interface Guide { axis: 'x' | 'y'; pos: number }
 export interface TrackPoint { layerId: string; p: P }
 
 type Drag =
-  | { kind: 'move'; start: P; items: { id: string; pos: Vec3; pinv: M }[]; key: string }
+  | { kind: 'move'; start: P; items: { id: string; pos: Vec3; pinv: M }[]; key: string; box0: Box | null; targets: { x: number[]; y: number[] } }
   | { kind: 'scale'; id: string; corner: P; mask: [number, number]; s0: Vec3; key: string }
   | { kind: 'rotate'; id: string; center: P; a0: number; r0: Vec3; key: string }
   | { kind: 'anchor'; id: string; key: string }
@@ -47,6 +48,7 @@ export function Overlay({ comp, view, onPan, guides, setGuides, trackPts, setTra
   const [hoverPt, setHoverPt] = useState<P | null>(null);
   const [selVertex, setSelVertex] = useState<number | null>(null);
   const [textEdit, setTextEdit] = useState<{ layerId: string; value: string } | null>(null);
+  const [snapLines, setSnapLines] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
   const { z } = view;
   const hs = 5 / z; // handle half-size in comp px
 
@@ -217,7 +219,8 @@ export function Overlay({ comp, view, onPan, guides, setGuides, trackPts, setTra
     }
 
     // ---- select tool
-    if (h === 'mask') return;
+    // Only a mask's outline selects it; clicking inside the mask moves the layer as usual.
+    if (h.startsWith('mask:')) { S().set({ selectedMask: h.slice(5) }); setSelVertex(null); return; }
     if (h.startsWith('v:') && editMask && single) { const idx = Number(h.slice(2)); setSelVertex(idx); setD({ kind: 'vertex', maskId: editMask.id, idx, key }); return; }
     if (h.startsWith('t:') && editMask && single) { const [, i, w] = h.split(':'); setD({ kind: 'tangent', maskId: editMask.id, idx: Number(i), which: w as 'i' | 'o', key }); return; }
     if (single && h === 'anchor') { setD({ kind: 'anchor', id: single.id, key }); return; }
@@ -240,8 +243,12 @@ export function Overlay({ comp, view, onPan, guides, setGuides, trackPts, setTra
     let ids = sel;
     if (e.shiftKey) { ids = sel.includes(hit.id) ? sel.filter((x) => x !== hit.id) : [...sel, hit.id]; S().select(ids); }
     else if (!sel.includes(hit.id)) { ids = [hit.id]; S().select(ids); }
-    const items = comp.layers.filter((l) => ids.includes(l.id) && !l.locked).map((l) => ({ id: l.id, pos: propAt(l.transform.position, time - l.start), pinv: inv(parentMatrix(comp, l, time)) }));
-    setD({ kind: 'move', start: pt, items, key });
+    // Grabbing the layer itself leaves mask editing so the transform handles come back.
+    if (S().selectedMask) { S().set({ selectedMask: null }); setSelVertex(null); }
+    const moving = comp.layers.filter((l) => ids.includes(l.id) && !l.locked);
+    const items = moving.map((l) => ({ id: l.id, pos: propAt(l.transform.position, time - l.start), pinv: inv(parentMatrix(comp, l, time)) }));
+    const box0 = unionBox(moving.map((l) => worldBox(project, comp, l, time)));
+    setD({ kind: 'move', start: pt, items, key, box0, targets: snapTargets(project, comp, time, moving.map((l) => l.id)) });
   }
 
   function onMove(e: React.PointerEvent) {
@@ -254,6 +261,14 @@ export function Overlay({ comp, view, onPan, guides, setGuides, trackPts, setTra
       case 'move': {
         let delta = sub(pt, d.start);
         if (e.shiftKey) delta = Math.abs(delta[0]) > Math.abs(delta[1]) ? [delta[0], 0] : [0, delta[1]];
+        // Snap the selection's edges/centre to the frame and other layers (hold Ctrl to move freely).
+        if (vflags.snap && !e.ctrlKey && d.box0) {
+          const b = d.box0, th = 8 / z;
+          const sx = e.shiftKey && delta[0] === 0 ? { offset: 0, line: null } : snapAxis(b[0] + delta[0], b[2] + delta[0], d.targets.x, th);
+          const sy = e.shiftKey && delta[1] === 0 ? { offset: 0, line: null } : snapAxis(b[1] + delta[1], b[3] + delta[1], d.targets.y, th);
+          delta = [delta[0] + sx.offset, delta[1] + sy.offset];
+          if (sx.line !== snapLines.x || sy.line !== snapLines.y) setSnapLines({ x: sx.line, y: sy.line });
+        } else if (snapLines.x !== null || snapLines.y !== null) setSnapLines({ x: null, y: null });
         writeProps(d.items.map((it) => {
           const ld = applyLinear(it.pinv, delta);
           return { layerId: it.id, path: 'transform.position', value: [it.pos[0] + ld[0], it.pos[1] + ld[1], it.pos[2]] };
@@ -342,6 +357,7 @@ export function Overlay({ comp, view, onPan, guides, setGuides, trackPts, setTra
   function onUp(e: React.PointerEvent) {
     const d = dragRef.current;
     setD(null);
+    if (snapLines.x !== null || snapLines.y !== null) setSnapLines({ x: null, y: null });
     if (!d) return;
     if (d.kind === 'rubber') {
       if (tool === 'maskRect' || tool === 'maskEllipse') void addMaskRect(d.start, toComp(e), tool === 'maskEllipse');
@@ -420,7 +436,8 @@ export function Overlay({ comp, view, onPan, guides, setGuides, trackPts, setTra
       const on = mk.id === selMask && l.id === single?.id;
       return (
         <g key={mk.id}>
-          <path d={pathD(path, m)} data-h="mask" className={`ov-mask ${on ? 'on' : ''}`} onPointerDown={() => { if (tool === 'select') S().set({ selectedMask: mk.id }); }} />
+          <path d={pathD(path, m)} className={`ov-mask ${on ? 'on' : ''}`} />
+          <path d={pathD(path, m)} data-h={`mask:${mk.id}`} className="ov-mask-hit" />
           {on && tool === 'select' && path.vertices.map((v, i) => {
             const p = apply(m, v.p as P), po = apply(m, [v.p[0] + v.o[0], v.p[1] + v.o[1]]), pi = apply(m, [v.p[0] + v.i[0], v.p[1] + v.i[1]]);
             const hasT = v.o[0] || v.o[1] || v.i[0] || v.i[1];
@@ -488,6 +505,8 @@ export function Overlay({ comp, view, onPan, guides, setGuides, trackPts, setTra
               {pen.map((v, i) => <rect key={i} x={v.p[0] - hs} y={v.p[1] - hs} width={hs * 2} height={hs * 2} className={i === 0 ? 'first' : ''} />)}
             </g>
           )}
+          {snapLines.x !== null && <line x1={snapLines.x} y1={-1e4} x2={snapLines.x} y2={1e4} className="ov-snap" />}
+          {snapLines.y !== null && <line x1={-1e4} y1={snapLines.y} x2={1e4} y2={snapLines.y} className="ov-snap" />}
           {rubber && (
             tool === 'ellipse' || tool === 'maskEllipse'
               ? <ellipse className="ov-rubber" cx={(rubber.start[0] + rubber.cur[0]) / 2} cy={(rubber.start[1] + rubber.cur[1]) / 2} rx={Math.abs(rubber.cur[0] - rubber.start[0]) / 2} ry={Math.abs(rubber.cur[1] - rubber.start[1]) / 2} />

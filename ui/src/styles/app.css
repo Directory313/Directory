@@ -19,7 +19,8 @@
 .flexlayout__tabset, .flexlayout__tab { background: var(--bg-2); }
 .flexlayout__tab { overflow: hidden; }
 .flexlayout__tabset_tabbar_outer { background: var(--bg-1); border-bottom: 1px solid var(--border-soft) !important; }
-.flexlayout__tab_button { color: var(--text-3); padding: 3px 10px; border-radius: var(--r-xs); margin: 3px 2px; }
+.flexlayout__tab_button { color: var(--text-3); padding: 3px 10px; border-radius: var(--r-xs); margin: 3px 2px; cursor: grab; }
+.flexlayout__tab_button:active { cursor: grabbing; }
 .flexlayout__tab_button:hover { color: var(--text-1); background: var(--bg-3); }
 .flexlayout__tab_button--selected { color: var(--text-1); background: var(--bg-3); }
 .flexlayout__tabset-selected .flexlayout__tab_button--selected { box-shadow: inset 0 -2px 0 var(--accent); }

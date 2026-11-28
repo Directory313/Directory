@@ -129,7 +129,7 @@ export const ClipRow = memo(function ClipRow({ layer, asset, height, selected, p
   };
   return (
     <>
-      <div className={`tl-clip ${selected ? 'sel' : ''} ${layer.visible ? '' : 'hidden'} ${layer.locked ? 'locked' : ''}`}
+      <div data-layer={layer.id} className={`tl-clip ${selected ? 'sel' : ''} ${layer.visible ? '' : 'hidden'} ${layer.locked ? 'locked' : ''}`}
         style={{ left: x, width: w, height: innerH, background: layerColor(layer), ['--lc' as string]: color ?? 'transparent' }}
         onPointerDown={down}
         onDoubleClick={() => { if (layer.kind.type === 'comp') openComp(layer.kind.comp); }}

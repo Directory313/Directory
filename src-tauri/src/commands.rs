@@ -694,7 +694,7 @@ fn render_cached(s: &AppState, comp_id: &str, t: f64, scale: f64, draft: bool) -
         return Ok(img);
     }
     let use_proxies = s.settings.read().use_proxies;
-    let p = s.project.read().clone();
+    let p = s.project_snapshot();
     let img = Arc::new(renderer.render(&p, comp_id, t, RenderOptions { scale, use_proxies, draft })?);
     s.cache.put(key, img.clone());
     Ok(img)

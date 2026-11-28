@@ -3,7 +3,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import {
   AlertTriangle, Box, ChevronLeft, ChevronRight, Circle, Crosshair, Grid3x3, Hand, MousePointer2, Orbit, PenTool, Play, Pause,
   Repeat, Ruler, ScanLine, SkipBack, SkipForward, Square, Star, StepBack, StepForward, Type, Hexagon, Layers, ZoomIn, CircleDashed, SquareDashed, Spline,
+  Magnet, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal,
+  AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
 } from 'lucide-react';
+import { alignSelected, distributeSelected } from './align';
 import { useComp, useEditor, type Tool } from '../../store/editor';
 import { api, isTauri } from '../../lib/api';
 import { formatTime } from '../../lib/anim';
@@ -65,6 +68,7 @@ export function Viewer() {
   const playing = useEditor((s) => s.playing);
   const loop = useEditor((s) => s.loop);
   const tool = useEditor((s) => s.tool);
+  const selCount = useEditor((s) => s.selectedLayers.length);
   const vflags = useEditor((s) => s.viewer);
   const fps = useEditor((s) => s.playbackFps);
   const dropped = useEditor((s) => s.droppedFrames);
@@ -222,6 +226,7 @@ export function Viewer() {
         <button className={`icon-btn ${vflags.grid ? 'active' : ''}`} title="Grid" onClick={() => S().set({ viewer: { ...vflags, grid: !vflags.grid } })}><Box size={14} /></button>
         <button className={`icon-btn ${vflags.safe ? 'active' : ''}`} title="Action & title safe areas" onClick={() => S().set({ viewer: { ...vflags, safe: !vflags.safe } })}><SquareDashed size={14} /></button>
         <button className={`icon-btn ${vflags.rulers ? 'active' : ''}`} title="Rulers & guides (drag from a ruler to add a guide)" onClick={() => S().set({ viewer: { ...vflags, rulers: !vflags.rulers } })}><Ruler size={14} /></button>
+        <button className={`icon-btn ${vflags.snap ? 'active' : ''}`} title="Snapping (Ctrl+;): snap to the frame's centre and edges and to other layers while dragging. Hold Ctrl to move freely." onClick={() => S().set({ viewer: { ...vflags, snap: !vflags.snap } })}><Magnet size={14} /></button>
       </div>
 
       <div className="vw-main">
@@ -239,6 +244,24 @@ export function Viewer() {
             <canvas ref={canvasRef} className="vw-canvas" style={{ imageRendering: z * (frameInfo ? comp.width / frameInfo.w : 1) > 2 ? 'pixelated' : 'auto' }} />
           </div>
           <Overlay comp={comp} view={{ left, top, z }} onPan={pan} guides={guides} setGuides={setGuides} trackPts={trackPts} setTrackPts={setTrackPts} />
+          {tool === 'select' && selCount > 0 && !playing && (
+            <div className="vw-align" role="toolbar" aria-label="Align" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+              {([
+                ['left', AlignStartVertical, 'Align left'], ['hcenter', AlignCenterVertical, 'Align horizontal centre'], ['right', AlignEndVertical, 'Align right'],
+                ['top', AlignStartHorizontal, 'Align top'], ['vcenter', AlignCenterHorizontal, 'Align vertical centre'], ['bottom', AlignEndHorizontal, 'Align bottom'],
+              ] as const).map(([m, Icon, label], i) => (
+                <span key={m} style={{ display: 'contents' }}>
+                  {i === 3 && <div className="vsep" />}
+                  <button className="icon-btn sm" title={`${label} ${selCount === 1 ? '(to the frame)' : '(to the selection)'}`} onClick={() => alignSelected(m)}><Icon size={14} /></button>
+                </span>
+              ))}
+              {selCount >= 3 && <>
+                <div className="vsep" />
+                <button className="icon-btn sm" title="Distribute horizontally" onClick={() => distributeSelected('x')}><AlignHorizontalDistributeCenter size={14} /></button>
+                <button className="icon-btn sm" title="Distribute vertically" onClick={() => distributeSelected('y')}><AlignVerticalDistributeCenter size={14} /></button>
+              </>}
+            </div>
+          )}
           {vflags.rulers && <Rulers z={z} left={left} top={top} w={size.w} h={size.h} onAddGuide={(g) => setGuides([...guides, g])} />}
           {!isTauri && <div className="vw-note">Preview renders in the Directory desktop app.</div>}
           {error && <div className="vw-error" title={error}><AlertTriangle size={13} /> {error.slice(0, 160)}</div>}

@@ -59,6 +59,7 @@ pub fn run() {
                 dirs,
                 crashed_last_time: crashed,
                 prerender_gen: AtomicU64::new(0),
+                snapshot: Mutex::new(None),
             };
             app.manage(st);
             if migrated {

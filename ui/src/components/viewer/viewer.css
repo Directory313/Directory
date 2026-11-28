@@ -40,7 +40,12 @@
 .ov-anchor { cursor: move; }
 .ov-anchor circle { fill: none; stroke: var(--accent-hi); stroke-width: 1.25; }
 .ov-anchor line { stroke: var(--accent-hi); stroke-width: 1; }
-.ov-mask { fill: rgba(255, 255, 255, 0.04); stroke: #e7b46a; stroke-width: 1; cursor: pointer; }
+.ov-mask { fill: rgba(255, 255, 255, 0.04); stroke: #e7b46a; stroke-width: 1; pointer-events: none; }
+/* Wide invisible outline: clicking the mask edge selects the mask, the inside stays free for moving. */
+.ov-mask-hit { fill: none; stroke: transparent; stroke-width: 10; pointer-events: stroke; cursor: pointer; }
+.ov-snap { stroke: #ff4fd8; stroke-width: 1; pointer-events: none; }
+.vw-align { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 1px; padding: 3px; background: var(--bg-3); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-2); z-index: 6; }
+.vw-align .vsep { height: 16px; margin: 0 3px; }
 .ov-mask.on { stroke: var(--accent-hi); stroke-width: 1.5; }
 .ov-vtx { fill: var(--bg-0); stroke: var(--accent-hi); stroke-width: 1.25; cursor: move; }
 .ov-vtx.on { fill: var(--accent); }

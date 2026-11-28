@@ -9,7 +9,7 @@ export type Tool = 'select' | 'hand' | 'zoom' | 'text' | 'rect' | 'ellipse' | 'p
 
 export interface KeySel { layerId: string; path: string; t: number }
 export interface Toast { id: number; kind: 'info' | 'success' | 'warning' | 'error'; text: string; detail?: string; time: number }
-export type Dialog = null | 'export' | 'settings' | 'newComp' | 'compSettings' | 'palette' | 'renderQueue' | 'shortcuts' | 'about' | 'track' | 'presets';
+export type Dialog = null | 'export' | 'settings' | 'newComp' | 'compSettings' | 'palette' | 'renderQueue' | 'shortcuts' | 'about' | 'track' | 'presets' | 'saveWorkspace';
 
 export interface ExportJob { id: string; label: string; status: 'queued' | 'running' | 'paused' | 'done' | 'failed' | 'cancelled'; progress?: import('../lib/api').ExportProgress; report?: import('../lib/api').ExportReport; error?: string; log?: string; settings: import('../lib/api').ExportSettings; compId: string; started: number }
 
@@ -46,7 +46,7 @@ export interface EditorState {
   graphProps: string[];
   autoKey: boolean;
   snapping: boolean;
-  viewer: { zoom: number; panX: number; panY: number; guides: boolean; grid: boolean; safe: boolean; rulers: boolean; checker: boolean; mode: '2d' | '3d' };
+  viewer: { zoom: number; panX: number; panY: number; guides: boolean; grid: boolean; safe: boolean; rulers: boolean; checker: boolean; snap: boolean; mode: '2d' | '3d' };
 
   effectDefs: EffectDef[];
   settings: Settings | null;
@@ -111,7 +111,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   graphProps: [],
   autoKey: false,
   snapping: true,
-  viewer: { zoom: 0, panX: 0, panY: 0, guides: false, grid: false, safe: false, rulers: false, checker: true, mode: '2d' },
+  viewer: { zoom: 0, panX: 0, panY: 0, guides: false, grid: false, safe: false, rulers: false, checker: true, snap: true, mode: '2d' },
   effectDefs: [],
   settings: null,
   appInfo: null,

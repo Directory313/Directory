@@ -10,6 +10,7 @@ import { ExportDialog } from './ExportDialog';
 import { RenderQueuePanel } from '../panels/RenderQueue';
 import { FPS_PRESETS, RES_PRESETS } from '../shell/HomeScreen';
 import { WORKSPACE_NAMES } from '../shell/workspaces';
+import { deleteWorkspace, saveWorkspaceAs } from '../shell/EditorShell';
 
 export function Dialogs() {
   const dialog = useEditor((s) => s.dialog);
@@ -21,8 +22,34 @@ export function Dialogs() {
     case 'palette': return <CommandPalette onClose={close} />;
     case 'shortcuts': return <ShortcutsDialog onClose={close} />;
     case 'renderQueue': return <Modal title="Render Queue" onClose={close} width={820}><div style={{ height: 440 }}><RenderQueuePanel /></div></Modal>;
+    case 'saveWorkspace': return <SaveWorkspaceDialog onClose={close} />;
     default: return null;
   }
+}
+
+// ---------------------------------------------------------------- custom workspaces
+function SaveWorkspaceDialog({ onClose }: { onClose: () => void }) {
+  const custom = Object.keys(useEditor((s) => s.settings?.workspaces) ?? {}).filter((n) => !WORKSPACE_NAMES.includes(n));
+  const [name, setName] = useState('My Workspace');
+  const save = () => { saveWorkspaceAs(name.trim()); onClose(); };
+  return (
+    <Modal title="Save Workspace" onClose={onClose} width={460} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!name.trim() || WORKSPACE_NAMES.includes(name.trim())} onClick={save}>{custom.includes(name.trim()) ? 'Replace' : 'Save'}</button></>}>
+      <div className="muted" style={{ marginBottom: 10 }}>Saves how the panels are arranged right now. Arrange them first by dragging a panel's tab title (for example "Inspector") onto another area; drop it on an edge to split, or in the middle to stack it as a tab.</div>
+      <Field label="Name"><input className="input" autoFocus value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter' && name.trim()) save(); }} /></Field>
+      {custom.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div className="muted" style={{ marginBottom: 4 }}>Your workspaces</div>
+          {custom.map((n) => (
+            <div key={n} className="row" style={{ padding: '2px 0' }}>
+              <span className="grow">{n}</span>
+              <button className="btn sm ghost" onClick={() => setName(n)}>Replace</button>
+              <button className="btn sm ghost" onClick={() => deleteWorkspace(n)}>Delete</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
 }
 
 // ---------------------------------------------------------------- composition settings

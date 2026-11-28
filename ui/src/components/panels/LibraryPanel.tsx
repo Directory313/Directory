@@ -10,6 +10,7 @@ import { TRANSITIONS, type Effect, type TransitionKind } from '../../types/proje
 import { EASINGS, sampleEasing, type Easing } from '../../lib/anim';
 import { applyEasingToSelection } from '../timeline/keyops';
 import { activeComp } from '../../store/editor';
+import { startLibraryDrag } from '../shell/dragdrop';
 
 type Tab = 'effects' | 'transitions' | 'animation' | 'shapes' | 'text' | '3d' | 'generate' | 'templates' | 'audio';
 const TABS: { id: Tab; label: string }[] = [
@@ -100,8 +101,10 @@ export function LibraryPanel() {
     api.setSettings(next);
   };
 
-  const item = (key: string, label: string, onClick: () => void, icon?: React.ReactNode, hint?: string, extra?: React.ReactNode) => (
-    <button key={key} className="lib-item" onClick={onClick} title={hint ?? label}>{icon}<span className="grow">{label}</span>{extra}</button>
+  // Every item can be clicked or dragged onto the timeline / viewer (effects onto a specific clip).
+  const item = (key: string, label: string, onClick: () => void, icon?: React.ReactNode, hint?: string, extra?: React.ReactNode, effect = false) => (
+    <button key={key} className="lib-item" onClick={onClick} draggable onDragStart={(e) => startLibraryDrag(e, onClick, effect)}
+      title={`${hint ?? label}\nDrag onto the ${effect ? 'timeline (onto a clip) or viewer' : 'timeline or viewer'} to add it.`}>{icon}<span className="grow">{label}</span>{extra}</button>
   );
 
   return (
@@ -124,7 +127,7 @@ export function LibraryPanel() {
               <div key={cat} className="lib-group">
                 <div className="lib-head">{cat}</div>
                 {list.map((d) => item(`${cat}-${d.kind}`, d.name, () => applyEffect(d.kind, d.audio), <Sparkles size={13} />, `${d.description}\nClick to apply to the selected layers${d.audio ? '' : ' (or to a new adjustment layer when nothing is selected)'}`,
-                  <span className={`fav ${favs.includes(d.kind) ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); toggleFav(d.kind); }} title="Favourite"><Star size={11} fill={favs.includes(d.kind) ? 'currentColor' : 'none'} /></span>))}
+                  <span className={`fav ${favs.includes(d.kind) ? 'on' : ''}`} onClick={(e) => { e.stopPropagation(); toggleFav(d.kind); }} title="Favourite"><Star size={11} fill={favs.includes(d.kind) ? 'currentColor' : 'none'} /></span>, true))}
               </div>
             ))}
           </>
